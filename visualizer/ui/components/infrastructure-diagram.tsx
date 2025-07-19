@@ -1,6 +1,6 @@
 "use client"
 
-import type { Infra0Node, Infra0Edge } from "../types/infrastructure"
+import type { Infra0Node, Infra0Edge } from "../types/infrastructure.js"
 
 interface InfrastructureDiagramProps {
   nodes: Infra0Node[]

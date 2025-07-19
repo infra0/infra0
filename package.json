@@ -4,7 +4,11 @@
     "version": "1.0.0",
     "scripts": {
       "dev": "pnpm -r run dev",
-      "build": "pnpm -r run build"
+      "build": "pnpm -r run build",
+      "server:inject-ui-build": "pnpm --filter infra0-visualizer-ui run build && cp -r visualizer/ui/build visualizer/server/visualizer-ui-build",
+      "postinstall": "chmod +x ./scripts/docker-build.sh && chmod +x ./scripts/docker-run.sh",
+      "ui:docker-build": "./scripts/docker-build.sh",
+      "ui:docker-run": "./scripts/docker-run.sh"
     },
     "devDependencies": {
       "typescript": "^5.4.0",

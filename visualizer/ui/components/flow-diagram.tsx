@@ -17,7 +17,7 @@ import ReactFlow, {
 } from "reactflow"
 
 import InfrastructureNode from "./infrastructure-node"
-import type { Infra0Node, Infra0Edge } from "../types/infrastructure"
+import type { Infra0Node, Infra0Edge } from "@/types/infrastructure"
 
 interface FlowDiagramProps {
   nodes: Infra0Node[]
@@ -163,12 +163,10 @@ export default function FlowDiagram({ nodes, edges, onNodeClick, onNodesChange }
         <Controls
           className="bg-gray-800/80 backdrop-blur-xl border border-gray-700/50 rounded-lg shadow-xl"
           style={{
-            button: {
-              backgroundColor: "rgba(55, 65, 81, 0.8)",
-              color: "#ffffff",
-              borderColor: "rgba(75, 85, 99, 0.5)",
-              backdropFilter: "blur(12px)",
-            },
+            backgroundColor: "rgba(55, 65, 81, 0.8)",
+            color: "#ffffff",
+            borderColor: "rgba(75, 85, 99, 0.5)",
+            backdropFilter: "blur(12px)",
           }}
         />
         <MiniMap

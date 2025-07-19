@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ArrowUp, Sparkles, User, Bot, Loader2 } from "lucide-react"
 import CompactWorkflow from "./compact-workflow"
-import type { ChatMessage } from "../types/chat"
+import type { ChatMessage } from "@/types/chat"
 
 interface ChatInterfaceProps {
   messages: ChatMessage[]

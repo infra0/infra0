@@ -1,0 +1,19 @@
+{
+    "name": "infra0-cli",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "start": "node dist/main.js",
+        "build": "tsc",
+        "dev": "ts-node src/main.ts"
+    },
+    "dependencies": {
+        "commander": "^13.1.0",
+        "typescript": "^5.4.0",
+        "dotenv": "^16.4.7"
+    },
+    "devDependencies": {
+        "ts-node": "^10.9.2",
+        "@types/express": "^5.0.0"
+    }
+}

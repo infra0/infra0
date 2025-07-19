@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Plus, Sparkles, ArrowUp } from "lucide-react"
-import ChatHistory from "../components/chat-history"
-import StreamingWorkflow from "../components/streaming-workflow"
-import type { ChatSession } from "../types/chat"
-import { generateId } from "../lib/utils"
+import ChatHistory from "@/components/chat-history"
+import StreamingWorkflow from "@/components/streaming-workflow"
+import type { ChatSession } from "@/types/chat"
+import { generateId } from "@/lib/utils"
 
 // Sample sessions
 const sampleSessions: ChatSession[] = [

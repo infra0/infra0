@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Maximize2, Minimize2, X } from "lucide-react"
 import FlowDiagram from "./flow-diagram"
-import type { Infra0Node, Infra0Edge } from "../types/infrastructure"
+import type { Infra0Node, Infra0Edge } from "@/types/infrastructure"
 
 interface FullscreenDiagramProps {
   nodes: Infra0Node[]

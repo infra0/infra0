@@ -1,5 +1,5 @@
 {
-  "name": "ui",
+  "name": "infra0-visualizer-ui",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,6 +8,7 @@
     "lint": "next lint",
     "start": "next start"
   },
+  "type": "module",
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",

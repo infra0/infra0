@@ -1,0 +1,16 @@
+{
+    "name": "infra0-visualizer-server",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "ts-node src/main.ts"
+    },
+    "dependencies": {
+        "express": "^4.21.2",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.4.0",
+        "@types/express": "^5.0.0"
+    }
+}
