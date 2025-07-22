@@ -4,5 +4,8 @@
       "moduleResolution": "NodeNext",
       "experimentalDecorators": true,
       "emitDecoratorMetadata": true,
-    }
+    },
+    "files": [
+      "src/types/express.d.ts"
+  ]
 }

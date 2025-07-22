@@ -5,12 +5,27 @@
     "scripts": {
         "build": "tsc",
         "start": "node dist/index.js",
-        "dev": "ts-node src/main.ts"
+        "dev": "nodemon --exec ts-node src/main.ts --watch src"
     },
     "dependencies": {
+        "@types/bcrypt": "^6.0.0",
+        "@types/express": "^5.0.0",
+        "@types/joi": "^17.2.3",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/lodash": "^4.17.20",
+        "@types/mongoose": "^5.11.97",
+        "bcrypt": "^6.0.0",
+        "dotenv": "^16.6.1",
         "express": "^4.21.2",
+        "http-status": "^2.1.0",
+        "joi": "^17.13.3",
+        "jsonwebtoken": "^9.0.2",
+        "lodash": "^4.17.21",
+        "mongoose": "^8.16.4",
         "ts-node": "^10.9.2",
-        "typescript": "^5.4.0",
-        "@types/express": "^5.0.0"
+        "typescript": "^5.4.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.10"
     }
 }
