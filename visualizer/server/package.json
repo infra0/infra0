@@ -8,12 +8,14 @@
         "dev": "nodemon --exec ts-node src/main.ts --watch src"
     },
     "dependencies": {
+        "@ai-sdk/anthropic": "^1.2.12",
         "@types/bcrypt": "^6.0.0",
         "@types/express": "^5.0.0",
         "@types/joi": "^17.2.3",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/lodash": "^4.17.20",
         "@types/mongoose": "^5.11.97",
+        "ai": "^4.3.19",
         "bcrypt": "^6.0.0",
         "dotenv": "^16.6.1",
         "express": "^4.21.2",
