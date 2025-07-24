@@ -331,7 +331,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 🐛 **Bug Reports**: [Create an issue](https://github.com/your-org/infra0/issues)
 - 💡 **Feature Requests**: [Start a discussion](https://github.com/your-org/infra0/discussions)
-- 📧 **Contact**: [your-email@example.com](mailto:contact@infra0.dev)
 
 ---
 
