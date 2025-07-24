@@ -5,18 +5,6 @@ import { config } from '../config';
 import authRoutes from './routes/auth.route'
 import conversationRoutes from './routes/conversation.route'
 
-// Check if required packages are available
-try {
-    require('ai');
-} catch (error) {
-    console.error('ai package is NOT available - run: npm install ai');
-}
-
-try {
-    require('@ai-sdk/anthropic');
-} catch (error) {
-    console.error('@ai-sdk/anthropic package is NOT available - run: npm install @ai-sdk/anthropic');
-}
 
 const app = express();
 
