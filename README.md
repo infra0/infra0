@@ -348,7 +348,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  <p>Made with ❤️ by the Infra0 team</p>
+  <p>Made with ❤️ by Developers, for Developers</p>
+  <p><em>Empowering infrastructure teams to build faster and smarter</em></p>
   <p>
     <a href="#top">Back to top</a>
   </p>
