@@ -41,64 +41,27 @@ const handleJWTExpiredError = (): AppError =>
   new AppError('Your token has expired! Please log in again.', 401);
 
 const sendErrorDev = (err: AppError, req: Request, res: Response): void => {
-  // A) API
-  if (req.originalUrl.startsWith('/api')) {
     res.status(err.statusCode).json({
       status: err.status,
       error: err,
       message: err.message,
       stack: err.stack
     });
-    return;
-  }
-
-  // B) RENDERED WEBSITE
-  console.error('ERROR 💥', err);
-  res.status(err.statusCode).render('error', {
-    title: 'Something went wrong!',
-    msg: err.message
-  });
 };
 
 const sendErrorProd = (err: AppError, req: Request, res: Response): void => {
-  // A) API
-  if (req.originalUrl.startsWith('/api')) {
-    // A) Operational, trusted error: send message to client
     if (err.isOperational) {
-      res.status(err.statusCode).json({
-        status: err.status,
-        message: err.message
-      });
-      return;
+            res.status(err.statusCode).json({
+            status: err.status,
+            message: err.message
+        });
+        return;
     }
-    // B) Programming or other unknown error: don't leak error details
-    // 1) Log error
     console.error('ERROR 💥', err);
-    // 2) Send generic message
     res.status(500).json({
-      status: 'error',
-      message: 'Something went very wrong!'
+        status: 'error',
+        message: 'Something went very wrong!'
     });
-    return;
-  }
-
-  // B) RENDERED WEBSITE
-  // A) Operational, trusted error: send message to client
-  if (err.isOperational) {
-    res.status(err.statusCode).render('error', {
-      title: 'Something went wrong!',
-      msg: err.message
-    });
-    return;
-  }
-  // B) Programming or other unknown error: don't leak error details
-  // 1) Log error
-  console.error('ERROR 💥', err);
-  // 2) Send generic message
-  res.status(err.statusCode).render('error', {
-    title: 'Something went wrong!',
-    msg: 'Please try again later.'
-  });
 };
 
 export default (err: AppErrorExtended, req: Request, res: Response, next: NextFunction): void => {
