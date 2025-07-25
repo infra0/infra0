@@ -12,7 +12,7 @@ const getConversation = async (id: ObjectId) => {
 }
 
 const getAllConversations = async (user: ObjectId) => {
-    const conversations = await ConversationModel.find({ user }).populate('messageCount');
+    const conversations = await ConversationModel.find({ user }).populate('total_messages_count');
     return conversations;
 }
 

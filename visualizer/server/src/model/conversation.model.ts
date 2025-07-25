@@ -5,6 +5,9 @@ import mongoose, { Schema, Document, ObjectId } from 'mongoose';
 export interface IConversation extends Document <ObjectId> {
   title: String,
   user: ObjectId,
+  createdAt: Date,
+  updatedAt: Date,
+  total_messages_count?: number, // Virtual field from Mongoose populate
 }
 
 
@@ -25,7 +28,7 @@ ConversationSchema.virtual('messageList', {
 });
   
 
-ConversationSchema.virtual('messageCount', {
+ConversationSchema.virtual('total_messages_count', {
     ref: 'Message',
     localField: '_id',
     foreignField: 'conversation',
@@ -33,4 +36,4 @@ ConversationSchema.virtual('messageCount', {
 });
 
 // Create and export the model
-export const ConversationModel = mongoose.model<IConversation>('Conversation', ConversationSchema);
+export const ConversationModel = mongoose.model<IConversation>('Conversation', ConversationSchema); 
