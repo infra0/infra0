@@ -6,6 +6,7 @@
 # next.js
 /.next/
 /out/
+/visualizer/ui/.next/
 
 # production
 /**/build
