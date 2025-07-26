@@ -1,6 +1,13 @@
+export enum ChatRole {
+  USER = "user",
+  ASSISTANT = "assistant",
+  SYSTEM = "system",
+}
+
+
 export interface ChatMessage {
   id: string
-  type: "user" | "assistant" | "system"
+  type: ChatRole
   content: string
   timestamp: Date
   isStreaming?: boolean

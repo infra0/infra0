@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import mongoose from 'mongoose';
+import cors from 'cors';
 import { config } from '../config';
 import authRoutes from './routes/auth.route'
 import conversationRoutes from './routes/conversation.route'
@@ -23,6 +24,7 @@ mongoose.connect(config.mongoDbUri).then(() => {
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 app.use(helmet());
 app.use(mongoSanitize());
 
@@ -46,7 +48,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/v1/auth', authRoutes);
 
-app.use('/api/v1/conversation', conversationRoutes);
+app.use('/api/v1/chat', conversationRoutes);
 
 app.use(express.static(path.join(__dirname, 'visualizer-ui-build')));
 

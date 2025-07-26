@@ -31,3 +31,30 @@ export interface Infra0 {
   resources: Record<string, Infra0Resource>
   diagram: Infra0Diagram
 }
+
+export interface InfrastructureResponse {
+  intro?: string
+  pulumiCode?: string
+  outro?: string
+  infra0Schema?: string
+}
+
+
+export enum ResponseSection {
+  INTRO = 'intro_json',
+  PULUMI_CODE = 'pulumi_code',
+  OUTRO = 'outro_json',
+  INFRA0_SCHEMA = 'infra0_schema'
+}
+
+export interface ParsedResponseState {
+  currentSection: ResponseSection | null
+  sections: InfrastructureResponse
+}
+
+export interface WorkflowStep {
+  id: string
+  title: string
+  description: string
+  status: "pending" | "active" | "completed"
+}
