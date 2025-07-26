@@ -9,6 +9,7 @@
 /visualizer/ui/.next/
 
 # production
+/**/.next/
 /**/build
 /**/dist
 /**/visualizer-ui-build
