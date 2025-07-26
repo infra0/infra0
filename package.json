@@ -6,10 +6,9 @@
       "dev": "pnpm -r run dev",
       "dev:visualizer": "pnpm --parallel --filter infra0-visualizer-ui --filter infra0-visualizer-server run dev",
       "build": "pnpm -r run build",
-      "server:inject-ui-build": "pnpm --filter infra0-visualizer-ui run build && cp -r visualizer/ui/build visualizer/server/visualizer-ui-build",
-      "postinstall": "chmod +x ./scripts/docker-build.sh && chmod +x ./scripts/docker-run.sh",
-      "ui:docker-build": "./scripts/docker-build.sh",
-      "ui:docker-run": "./scripts/docker-run.sh"
+      "postinstall": "chmod +x ./visualizer/scripts/docker-build.sh && chmod +x ./visualizer/scripts/docker-run.sh",
+      "visualizer:start": "pnpm run --filter infra0-visualizer start",
+      "visualizer:build": "pnpm run --filter infra0-visualizer build"
     },
     "devDependencies": {
       "typescript": "^5.4.0",

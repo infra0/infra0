@@ -1,11 +1,12 @@
 {
-    "extends": "../../tsconfig.json",
     "compilerOptions": {
+      "module": "NodeNext",
       "moduleResolution": "NodeNext",
       "experimentalDecorators": true,
       "emitDecoratorMetadata": true,
+      "outDir": "dist"
     },
-    "files": [
-      "src/types/express.d.ts"
-  ]
+    "include": [
+      "src/**/*.ts"
+    ]
 }
