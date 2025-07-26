@@ -10,6 +10,7 @@
     "dependencies": {
         "@ai-sdk/anthropic": "^1.2.12",
         "@types/bcrypt": "^6.0.0",
+        "@types/cors": "^2.8.19",
         "@types/express": "^5.0.0",
         "@types/joi": "^17.2.3",
         "@types/jsonwebtoken": "^9.0.10",
@@ -18,6 +19,7 @@
         "@types/morgan": "^1.9.10",
         "ai": "^4.3.19",
         "bcrypt": "^6.0.0",
+        "cors": "^2.8.5",
         "dotenv": "^16.6.1",
         "express": "^4.21.2",
         "express-mongo-sanitize": "^2.2.0",

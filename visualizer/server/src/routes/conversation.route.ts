@@ -9,8 +9,7 @@ const router = express.Router();
 
 router.post('/create', authMiddleware.verifyToken, validate(createConversation), conversationController.create);
 router.get('/', authMiddleware.verifyToken, conversationController.getAllConversations);
-// router.post('/continue', authMiddleware.verifyToken, conversationController.continueConversation);
-// router.post('/', authMiddleware.verifyToken, validate(createConversation), conversationController.create);
+router.post('/completions', conversationController.chatCompletions);
 
 
 export default router;

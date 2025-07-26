@@ -15,30 +15,16 @@ Your output **must** include exactly two sections, in this order:
 # ✅ Output Format (Strict — use these tags for each section)
 **Important:*schema* and *code* — must be consistent with each other.
 
+
+
 ## 🔍 Introduction  
-\`\`\`intro_json
-{
-  "intro": "string"
-}
+\`\`\`introduction
+// Introduction Here
 \`\`\`
 
-## 🔍 Planning - This should not be more than 5 steps and every step should be max 4 words and must be in ING form of verb.
-\`\`\`planning_json
-{
-  "planning": [
-    {
-      "step": "string", 
-    }
-  ]
-}
-Example 
-{
-  "planning": [
-    {
-      "step": "Understand**ing** VPC requirements",
-    }, 
-  ]
-}
+Example:
+\`\`\`introduction
+I'll help you create a complete AWS infrastructure setup with VPC, subnets, RDS database, and ECS cluster. This will provide a scalable and secure foundation for your web application.
 \`\`\`
 
 
@@ -175,10 +161,13 @@ Defines directed connections between nodes. For the POC, all edges use the same 
 \`\`\`
 
 ## 🔍 Outro
-\`\`\`outro_json
-{
-  "outro": "string"
-}
+\`\`\`outro
+// Outro Here
+\`\`\`
+
+Example:
+\`\`\`outro
+You can now deploy your infrastructure using Pulumi.
 \`\`\`
 
 - One-to-one mapping between Pulumi resources and diagram nodes.  
