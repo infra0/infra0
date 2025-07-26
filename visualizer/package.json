@@ -1,0 +1,15 @@
+{
+    "name": "infra0-visualizer",
+    "private": true,
+    "version": "1.0.0",
+    "scripts": {
+      "start": "pnpm run docker:up",
+      "build": "pnpm run docker:build",
+      "docker:up": "docker compose up --build",
+      "docker:build": "docker compose build"
+    },
+    "devDependencies": {
+      "typescript": "^5.4.0",
+      "eslint": "^8.52.0"
+    }
+  }
