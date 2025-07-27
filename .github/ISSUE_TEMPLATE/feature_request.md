@@ -1,8 +1,8 @@
 ---
 name: 🚀 Feature Request
 about: Suggest a new idea or enhancement
-title: "[FEATURE] <title>"
-labels: enhancement
+title: "[feat] <title>"
+labels: feature
 assignees: ''
 ---
 
