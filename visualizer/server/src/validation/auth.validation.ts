@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi, { bool } from 'joi';
 
 export const loginValidation = Joi.object({
     body: Joi.object().keys({
@@ -27,3 +27,10 @@ export const registerValidation = Joi.object({
         password: Joi.string().required()
     })
 });
+
+
+export const refreshToken = Joi.object({
+    body: Joi.object().keys({
+        refreshToken: Joi.string().required()
+    })
+})

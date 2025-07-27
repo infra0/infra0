@@ -7,9 +7,14 @@ export type LoginRequest = {
   password: string;
 };
 
+export interface Tokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface LoginResponse extends BaseResponseWithData<{
-  token: string;
   user: IUser;
+  tokens : Tokens
 } | null> {}
 
 
@@ -21,7 +26,15 @@ export type RegisterRequest = {
 };
 
 export interface RegisterResponse extends BaseResponseWithData<{
-  token: string;
   user: IUser;
+  tokens : Tokens
+} | null> {}
+
+export type RefreshTokenRequest = {
+  refreshToken: string;
+};
+
+export interface RefreshTokenResponse extends BaseResponseWithData<{
+  tokens : Tokens
 } | null> {}
 
