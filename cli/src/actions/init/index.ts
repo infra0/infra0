@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { checkAndCreateInfra0Directory } from './directoryHelper';
 import { checkAndCreateOverrideFile } from './fileHelper';
 import { Infra0ProjectConfig } from './types';
-import { INFRA0_DIRECTORY_NAME, OVERRIDE_FILE_NAME } from './constants';
+import { INFRA0_DIRECTORY_NAME, OVERRIDE_FILE_NAME } from '../constants';
 
 export const addInitAction = (program: Command) => {
     program.action(() => {

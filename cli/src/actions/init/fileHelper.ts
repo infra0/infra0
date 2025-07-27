@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Infra0ProjectConfig } from './types';
-import { INFRA0_OVERRIDE_FILE_CONTENT } from './constants';
+import { INFRA0_OVERRIDE_FILE_CONTENT } from '../constants';
 
 
 /**
