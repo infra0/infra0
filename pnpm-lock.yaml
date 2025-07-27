@@ -34,6 +34,15 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@22.16.4)(typescript@5.8.3)
 
+  visualizer:
+    devDependencies:
+      eslint:
+        specifier: ^8.52.0
+        version: 8.57.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.8.3
+
   visualizer/server:
     dependencies:
       '@ai-sdk/anthropic':
