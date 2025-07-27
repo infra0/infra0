@@ -1,7 +1,7 @@
 ---
 name: 📚 Documentation Feedback
 about: Suggest improvements to our documentation
-title: "[DOC] <title>"
+title: "[doc] <title>"
 labels: documentation
 assignees: ''
 ---
