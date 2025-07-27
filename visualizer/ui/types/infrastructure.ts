@@ -48,7 +48,6 @@ export enum ResponseSection {
 }
 
 export interface ParsedResponseState {
-  currentSection: ResponseSection | null
   sections: InfrastructureResponse
 }
 

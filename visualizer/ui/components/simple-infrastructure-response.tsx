@@ -14,16 +14,7 @@ export default function SimpleInfrastructureResponse({
   content, 
   isStreaming = false 
 }: SimpleInfrastructureResponseProps) {
-  const [parsedState, setParsedState] = useState<ParsedResponseState>({
-    currentSection: null,
-    sections: {}
-  })
-
-  // Parse the content whenever it changes
-  useEffect(() => {
-    const newState = InfrastructureResponseParser.parseStreamingResponse(content)
-    setParsedState(newState)
-  }, [content])
+  const parsedState = useMemo(() => InfrastructureResponseParser.parseStreamingResponse(content), [content])
 
   const { sections } = parsedState
   const isGeneratingCode = isStreaming && !sections.outro && sections.pulumiCode

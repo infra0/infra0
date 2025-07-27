@@ -25,17 +25,9 @@ export class InfrastructureResponseParser {
     }
   }
 
-  private static readonly SECTION_ORDER = [
-    ResponseSection.INTRO,
-    ResponseSection.PULUMI_CODE,
-    ResponseSection.INFRA0_SCHEMA,
-    ResponseSection.OUTRO
-  ]
-
   static parseStreamingResponse(content: string): ParsedResponseState {
     const sections: InfrastructureResponse = {}
     const foundSections = new Set<ResponseSection>()
-    let currentSection: ResponseSection | null = null
 
     for (const [sectionType, pattern] of Object.entries(this.SECTION_PATTERNS)) {
       const startMatch = content.match(pattern.start)
@@ -69,32 +61,9 @@ export class InfrastructureResponseParser {
       }
     }
 
-    // Determine current section being streamed
-    for (const section of this.SECTION_ORDER) {
-      if (!foundSections.has(section)) {
-        // Check if this section is currently being streamed (partial match)
-        const sectionStart = this.getSectionStart(content, section)
-        if (sectionStart !== -1) {
-          currentSection = section
-        }
-        break
-      }
-    }
-
-    // If all sections are found, we're complete
-    const isComplete = this.SECTION_ORDER.every(section => foundSections.has(section))
-
     return {
-      currentSection,
       sections,
-      isComplete
     }
-  }
-
-  private static getSectionStart(content: string, section: ResponseSection): number {
-    const startPattern = new RegExp(`\`\`\`${section}`)
-    const match = content.match(startPattern)
-    return match ? match.index! : -1
   }
 
 }

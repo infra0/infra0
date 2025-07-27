@@ -8,5 +8,8 @@
     },
     "include": [
       "src/**/*.ts"
+    ],
+    "files": [
+      "src/types/express.d.ts"
     ]
 }
