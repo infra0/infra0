@@ -5,7 +5,7 @@
     "scripts": {
         "build": "tsc",
         "start": "node dist/src/main.js",
-        "dev": "NODE_ENV=development nodemon --exec ts-node src/main.ts --watch src"
+        "dev": "cross-env NODE_ENV=development nodemon --exec ts-node src/main.ts --watch src"
     },
     "dependencies": {
         "@ai-sdk/anthropic": "^1.2.12",
@@ -20,6 +20,7 @@
         "ai": "^4.3.19",
         "bcrypt": "^6.0.0",
         "cors": "^2.8.5",
+        "cross-env": "^10.0.0",
         "dotenv": "^16.6.1",
         "express": "^4.21.2",
         "express-mongo-sanitize": "^2.2.0",
