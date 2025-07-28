@@ -1,6 +1,3 @@
-# Visualizer Docker Compose Override Configuration
-# This file contains environment-specific overrides for the visualizer services
-
 version: "3.9"
 
 x-shared-env: &shared-env

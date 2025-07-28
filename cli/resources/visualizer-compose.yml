@@ -21,4 +21,17 @@ services:
     container_name: infra0-visualizer-server
     image: xshubhamx/infra0-visualizer-server:${NODE_ENV:-development}
     stop_signal: SIGINT
-    restart: unless-stopped 
+    restart: unless-stopped
+
+  mongo:
+    <<: *shared-env
+    image: mongo:latest
+    container_name: infra0-mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - infra0-mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  infra0-mongo-data:
