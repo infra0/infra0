@@ -7,6 +7,7 @@ import {
   RegisterResponse,
   RefreshTokenRequest,
   RefreshTokenResponse,
+  JWT_PAYLOAD_TYPE,
 } from "../types/auth.types";
 import { getUserByContact, createUserItem } from "../services/user.service";
 import { AppError } from "../errors/app-error";
@@ -14,13 +15,13 @@ import httpStatus from "http-status";
 import { IUser } from "../model/user.model";
 import {
   correctPassword,
-  createTokens,
-  createAccessToken,
   verifyToken,
+  generateOnlyAccessToken,
+  generateAuthTokens,
 } from "../helpers/jwt";
 import { Status } from "../types/base";
 
-const refreshTokens = asyncHandler(
+const refreshToken = asyncHandler(
   async (
     req: Request<{}, {}, RefreshTokenRequest>,
     res: Response<RefreshTokenResponse>
@@ -31,17 +32,20 @@ const refreshTokens = asyncHandler(
       throw new AppError("Refresh token is required", httpStatus.BAD_REQUEST);
     }
 
-    const decoded = verifyToken(refreshToken) as any;
+    const decoded = verifyToken(refreshToken) as JWT_PAYLOAD_TYPE;
 
-    const newAccessToken = createAccessToken({ id: decoded.id });
+    const newAccessToken = await generateOnlyAccessToken({ id: decoded.sub });
 
     res.status(httpStatus.OK).json({
       status: Status.SUCCESS,
       message: "Token refreshed successfully",
       data: {
         tokens: {
-          accessToken: newAccessToken,
-          refreshToken: refreshToken,
+          access: newAccessToken.access,
+          refresh: {
+            token: refreshToken,
+            expires: new Date(decoded.exp * 1000),
+          },
         },
       },
     });
@@ -62,17 +66,14 @@ const login = asyncHandler(
     }
 
     // Generate both tokens
-    const tokens = createTokens({ id: user.id });
+    const tokens = await generateAuthTokens({ id: user.id });
 
     res.status(httpStatus.OK).json({
       status: Status.SUCCESS,
       message: "Login successful",
       data: {
-        tokens: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        },
         user,
+        tokens
       },
     });
   }
@@ -91,17 +92,14 @@ const register = asyncHandler(
       lastName,
     });
 
-    const tokens = createTokens({ id: user.id });
+    const tokens = await generateAuthTokens({ id: user.id });
 
     res.status(httpStatus.OK).json({
       status: Status.SUCCESS,
       message: "Register successful",
       data: {
-        tokens: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        },
         user,
+        tokens
       },
     });
   }
@@ -116,4 +114,4 @@ const me = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-export { login, register, me, refreshTokens };
+export { login, register, me, refreshToken };

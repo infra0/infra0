@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post('/login', validate(loginValidation), authController.login);
 router.post('/register', validate(registerValidation), authController.register);
-router.post('/refresh', validate(refreshToken), authController.refreshTokens);
+router.post('/refresh', validate(refreshToken), authController.refreshToken);
 
 router.get('/me', authMiddleware.verifyToken, authController.me);
 

@@ -16,8 +16,8 @@ export const verifyToken = asyncHandler(async (
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  const decoded = verifyTokenHelper(token) as { id: string };
-  const user = await getUserById(decoded.id);
+  const decoded = verifyTokenHelper(token);
+  const user = await getUserById(decoded.sub);
   if (!user) {
     return res.status(401).json({ message: "User not found" });
   }
