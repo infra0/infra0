@@ -37,11 +37,16 @@ const sampleSessions: ChatSession[] = [
   },
 ]
 
-export default function HomePage() {
+function HomePage() {
   const router = useRouter()
   const [sessions, setSessions] = useState<ChatSession[]>(sampleSessions)
   const [input, setInput] = useState("")
-  const { handleInputChange, handleSubmit, isWorking, append, messages } = useChat('user-chat-id')
+  const { isWorking : isLLMStreaming, append, messages } = useChat('user-chat-id')
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+
+  const isWorking = isSubmitting && isLLMStreaming;
 
   const handleNewSession = useCallback(() => {
     const sessionId = generateId()
@@ -60,7 +65,8 @@ export default function HomePage() {
   }, [router])
 
   const handleSendMessage = useCallback(async () => {
-    if (!input.trim() || isWorking) return
+    if (!input.trim() || isWorking || isSubmitting) return
+    setIsSubmitting(true);
 
     const message = {
       role: ChatRole.USER,
@@ -69,6 +75,7 @@ export default function HomePage() {
     
     await append(message)
     setInput("")
+    setIsSubmitting(false)
   }, [input, isWorking, append])
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -262,3 +269,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+export default HomePage

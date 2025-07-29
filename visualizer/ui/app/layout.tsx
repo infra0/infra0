@@ -2,6 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { UserProvider } from "@/contexts/user-context"
+import ClientLayoutWrapper from "@/components/client-layout-wrapper"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,9 +22,17 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+
+  
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} font-sans bg-[#0a0a0a] text-white antialiased`}>{children}</body>
+      <body className={`${inter.variable} font-sans bg-[#0a0a0a] text-white antialiased`}>
+        <UserProvider>
+          <ClientLayoutWrapper>
+            {children}
+          </ClientLayoutWrapper>
+        </UserProvider>
+      </body>
     </html>
   )
 }

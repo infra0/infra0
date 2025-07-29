@@ -7,9 +7,31 @@ export type LoginRequest = {
   password: string;
 };
 
+export enum TokenTypes {
+  ACCESS = 'access',
+  REFRESH = 'refresh'
+}
+
+export type JWT_PAYLOAD_TYPE = {
+  sub: string,
+  iat: number,
+  exp: number,
+  type : TokenTypes
+}
+export interface Tokens {
+  access: {
+    token: string;
+    expires: Date;
+  }
+  refresh: {
+    token: string;
+    expires: Date;
+  }
+}
+
 export interface LoginResponse extends BaseResponseWithData<{
-  token: string;
   user: IUser;
+  tokens : Tokens
 } | null> {}
 
 
@@ -21,7 +43,15 @@ export type RegisterRequest = {
 };
 
 export interface RegisterResponse extends BaseResponseWithData<{
-  token: string;
   user: IUser;
+  tokens : Tokens
+} | null> {}
+
+export type RefreshTokenRequest = {
+  refreshToken: string;
+};
+
+export interface RefreshTokenResponse extends BaseResponseWithData<{
+  tokens : Tokens
 } | null> {}
 
