@@ -19,3 +19,23 @@ export function checkAndCreateInfra0Directory(directoryName: string): boolean {
         throw new Error(`Failed to create ${directoryName} directory: ${error}`);
     }
 } 
+
+
+/**
+ * Recursively extract all file names from a directory and its subdirectories
+ * @param directory - The directory to extract files from
+ * @returns string[] - An array of file paths (relative to the input directory)
+ */
+export function getFilesInDirectory(directory: string): string[] {
+    let results: string[] = [];
+    const list = fs.readdirSync(directory, { withFileTypes: true });
+    for (const dirent of list) {
+        const fullPath = `${directory}/${dirent.name}`;
+        if (dirent.isDirectory()) {
+            results = results.concat(getFilesInDirectory(fullPath));
+        } else if (dirent.isFile()) {
+            results.push(fullPath);
+        }
+    }
+    return results;
+}

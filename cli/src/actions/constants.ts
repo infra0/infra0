@@ -1,5 +1,6 @@
 export const INFRA0_DIRECTORY_NAME = '.infra0';
 export const OVERRIDE_FILE_NAME = 'visualizer-compose.override.yml';
+export const PROJECT_JSON_FILE_NAME = 'project.json';
 export const BASE_COMPOSE_FILE_NAME = 'visualizer-compose.yml';
 export const BASE_COMPOSE_FILE_PATH = `../../../resources/${BASE_COMPOSE_FILE_NAME}`;
 
@@ -29,3 +30,8 @@ services:
     image: xshubhamx/infra0-visualizer-server:\${NODE_ENV:-development}
     stop_signal: SIGINT
 `;
+
+export const INFRA0_PROJECT_JSON_FILE_CONTENT = {
+    "path": "",
+    "conversationIds": []
+};
