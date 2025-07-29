@@ -11,7 +11,7 @@ type AuthTokenPayload = {
 }
 
 const generateToken = (userId: string, expires: moment.Moment, type: TokenTypes, secret = config.jwt.secret) => {
-  const payload = {
+  const payload : JWT_PAYLOAD_TYPE = {
     sub: userId,
     iat: moment().unix(),
     exp: expires.unix(),
@@ -37,6 +37,12 @@ export const generateAuthTokens = async (user: AuthTokenPayload) => {
       expires: refreshTokenExpires.toDate()
     }
   }
+}
+
+
+export const extractAuthToken = (bearerToken: string) => {
+  const authToken = bearerToken.split('Bearer ')[1]
+  return authToken
 }
 
 

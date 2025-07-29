@@ -3,10 +3,12 @@ import Joi, { bool } from 'joi';
 export const loginValidation = Joi.object({
     body: Joi.object().keys({
         contact: Joi.string()
-            .pattern(/^\d{10}$/)
             .required()
+            .min(10)
+            .max(15)
             .messages({
-            'string.pattern.base': 'Contact number must be exactly 10 digits',
+            'string.min': 'Contact number must be at least 10 digits',
+            'string.max': 'Contact number must be at most 15 digits',
             'any.required': 'Contact number is required'
         }),
 

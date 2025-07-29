@@ -1,38 +1,54 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useContext, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sparkles, Loader2, ArrowLeft } from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
-import { signInWithGoogle, signInWithGitHub, signInAsDemo } from "@/services/api/auth"
+
+import * as authService from "@/services/auth/auth.service"
+import { toast } from "@/hooks/use-toast"
+import { DEMO_USER_LOGIN } from "@/constants/user"
+import { setCookie } from "cookies-next"
+import { TOKEN } from "@/constants/cookie"
+import { UserContext } from "@/contexts/user-context"
 
 export default function SignInPage() {
   const router = useRouter()
-  const { signIn } = useAuth()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const isDevelopment = process.env.NODE_ENV === 'development'
+  const userContext = useContext(UserContext)
+  // Get return URL from query params, default to home
+  const returnUrl = searchParams.get('returnUrl') || '/'
 
   const handleSignIn = async (provider: "google" | "github" | "demo") => {
     setIsLoading(provider)
     try {
-      let user
       switch (provider) {
         case "google":
-          user = await signInWithGoogle()
+          // TODO : add google provider login
           break
         case "github":
-          user = await signInWithGitHub()
+          // TODO : add github provider login
           break
         case "demo":
-          user = await signInAsDemo()
+          const { data } = await authService.login({
+            contact: DEMO_USER_LOGIN.contact,
+            password: DEMO_USER_LOGIN.password,
+          })
+
+          setCookie(TOKEN, JSON.stringify(data.tokens))
+          userContext?.setUser(data.user)
           break
       }
-
-      signIn(user)
-      router.push("/")
-    } catch (error) {
+      router.push(returnUrl)
+    } catch (error : any) {
       console.error("Sign in error:", error)
+      toast({
+        title: "Sign in error",
+        description: error.response.data.message,
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(null)
     }

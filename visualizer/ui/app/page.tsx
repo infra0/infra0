@@ -37,7 +37,7 @@ const sampleSessions: ChatSession[] = [
   },
 ]
 
-export default function HomePage() {
+function HomePage() {
   const router = useRouter()
   const [sessions, setSessions] = useState<ChatSession[]>(sampleSessions)
   const [input, setInput] = useState("")
@@ -269,3 +269,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+export default HomePage

@@ -12,6 +12,7 @@ import FullscreenDiagram from "@/components/fullscreen-diagram"
 import PulumiConfigModal from "@/components/pulumi-config-modal"
 import { type Infra0Node, type Infra0Edge, Infra0EdgeType } from "@/types/infrastructure"
 import type { ChatMessage, ChatSession } from "@/types/chat"
+import { ChatRole } from "@/types/chat"
 import { generateId } from "@/lib/utils"
 
 // Sample infrastructure state
@@ -44,13 +45,13 @@ const sampleSessions: ChatSession[] = [
     messages: [
       {
         id: "msg-1",
-        type: "user",
+        type: ChatRole.USER,
         content: "Create an AWS VPC with public and private subnets, an RDS database, and an ECS cluster",
         timestamp: new Date(Date.now() - 86400000),
       },
       {
         id: "msg-2",
-        type: "assistant",
+        type: ChatRole.ASSISTANT,
         content: "I've created an infrastructure with VPC, public/private subnets, RDS, and ECS cluster.",
         timestamp: new Date(Date.now() - 86300000),
       },
@@ -62,7 +63,7 @@ const sampleSessions: ChatSession[] = [
   },
 ]
 
-export default function ProjectPage({ params }: { params: { id: string } }) {
+function ProjectPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const projectId = params.id
 
@@ -92,7 +93,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     // Add streaming message immediately
     const streamingMessage: ChatMessage = {
       id: generateId(),
-      type: "assistant",
+      type: ChatRole.ASSISTANT,
       content: prompt,
       timestamp: new Date(),
       isStreaming: true,
@@ -120,7 +121,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     (content: string) => {
       const userMessage: ChatMessage = {
         id: generateId(),
-        type: "user",
+        type: ChatRole.USER,
         content,
         timestamp: new Date(),
       }
@@ -277,3 +278,4 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
+export default ProjectPage;

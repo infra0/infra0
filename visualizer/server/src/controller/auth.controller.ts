@@ -20,6 +20,7 @@ import {
   generateAuthTokens,
 } from "../helpers/jwt";
 import { Status } from "../types/base";
+import { extractAuthToken } from "../helpers/jwt";
 
 const refreshToken = asyncHandler(
   async (
@@ -114,4 +115,17 @@ const me = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-export { login, register, me, refreshToken };
+const validateAccessToken = asyncHandler(async (req: Request, res: Response<boolean>) => { 
+  const authToken = extractAuthToken(req.headers.authorization || '')
+  if (!authToken) {
+    throw new AppError("Please authenticate", httpStatus.UNAUTHORIZED)
+  }
+  const isValidated = verifyToken(authToken)
+  if (!isValidated) {
+    throw new AppError("Invalid token", httpStatus.UNAUTHORIZED)
+  }
+  res.status(httpStatus.OK).json(isValidated ? true : false)
+
+});
+
+export { login, register, me, refreshToken, validateAccessToken };
