@@ -12,3 +12,10 @@ export class AppError extends Error {
       Error.captureStackTrace(this, this.constructor);
     }
   } 
+
+export class DuplicateResourceError extends Error {
+    constructor() {
+        super("DB Resource already exists");
+        Error.captureStackTrace(this, this.constructor);
+    }
+}

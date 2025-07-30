@@ -1,4 +1,4 @@
-import { AppError } from "../errors/app-error";
+import { DuplicateResourceError } from "../errors/app-error";
 import {IUser, UserModel} from "../model/user.model";
 import httpStatus from "http-status";
 
@@ -25,7 +25,7 @@ export async function createUserItem(user: CreateUserItemParams): Promise<IUser>
     const existingUser = await getUserByContact(user.contact);
     
     if (existingUser) {
-    throw new AppError('User already exists', httpStatus.BAD_REQUEST);
+        throw new DuplicateResourceError();
     }
 
     const newUser = await UserModel.create({
