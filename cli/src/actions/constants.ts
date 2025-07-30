@@ -33,5 +33,5 @@ services:
 
 export const INFRA0_PROJECT_JSON_FILE_CONTENT = {
     "path": "",
-    "conversationIds": []
+    "visualizerData": {}
 };

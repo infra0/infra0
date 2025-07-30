@@ -7,5 +7,17 @@ export interface Infra0ProjectConfig {
 
 export interface Infra0ProjectJSON {
     path: string;
-    conversationIds: string[];
+    visualizerData: {
+        userId: string;
+        tokens: {
+            access: {
+                token: string;
+                expiresAt: string;
+            }
+            refresh: {
+                token: string;
+                expiresAt: string;
+            }
+        }
+    };
 }

@@ -17,6 +17,9 @@ importers:
 
   cli:
     dependencies:
+      axios:
+        specifier: ^1.7.9
+        version: 1.11.0
       commander:
         specifier: ^13.1.0
         version: 13.1.0
@@ -26,6 +29,9 @@ importers:
       enquirer:
         specifier: ^2.3.6
         version: 2.4.1
+      mongoose:
+        specifier: ^8.9.3
+        version: 8.16.4
       typescript:
         specifier: ^5.4.0
         version: 5.8.3
