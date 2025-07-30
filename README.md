@@ -44,7 +44,7 @@ infra0/
 
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS, React Flow
 - **Backend**: Node.js, Express, MongoDB, TypeScript
-- **AI**: Anthropic Claude (via AI SDK)
+- **AI**: Anthropic Claude (via AI SDK) and Gemini Google (via AI SDK)
 - **CLI**: Commander.js, TypeScript
 - **Infrastructure**: Pulumi (TypeScript)
 - **Containerization**: Docker
@@ -59,43 +59,49 @@ infra0/
 - Node.js 18+ and pnpm
 - Docker (optional, for containerized deployment)
 - MongoDB instance
-- Anthropic API key
+- Anthropic or Gemini API key
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/your-org/infra0.git
    cd infra0
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
 3. **Set up environment variables**
-   
+
    Create `.env.development` files in the respective directories:
 
    **visualizer/server/.env.development**
+
    ```env
    # Database
    MONGODB_URI=mongodb://localhost:27017/infra0
-   
+
    # AI Configuration
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
-   
+   or
+   GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key_here
+
    # JWT
    JWT_SECRET=your_jwt_secret_here
    JWT_EXPIRES_IN=7d
-   
+
    # Server
    PORT=8000
    NODE_ENV=development
    ```
 
    **cli/.env.development**
+
    ```env
    # Docker Image Configuration
    INFRA0_UI_IMAGE_URL=infra0/visualizer-ui:latest
@@ -105,10 +111,11 @@ infra0/
    ```
 
 4. **Start the development environment**
+
    ```bash
    # Start both frontend and backend
    pnpm dev:visualizer
-   
+
    # Or start everything including CLI
    pnpm dev
    ```
@@ -124,13 +131,15 @@ infra0/
 ### Web Interface
 
 1. **Start a New Project**
+
    - Open the web interface at http://localhost:3000
    - Click "New Project" or describe your infrastructure needs
 
 2. **Describe Your Infrastructure**
+
    ```
-   Create an AWS VPC with public and private subnets, 
-   an RDS PostgreSQL database, and an ECS cluster 
+   Create an AWS VPC with public and private subnets,
+   an RDS PostgreSQL database, and an ECS cluster
    with a load balancer
    ```
 
@@ -142,6 +151,7 @@ infra0/
 ### CLI Interface
 
 1. **Initialize a new project**
+
    ```bash
    cd cli
    pnpm dev init
@@ -155,12 +165,14 @@ infra0/
 ### Example Infrastructure Generation
 
 **Input:**
+
 ```
-I need a serverless API with a Lambda function, API Gateway, 
+I need a serverless API with a Lambda function, API Gateway,
 DynamoDB table, and proper IAM roles for a user management system
 ```
 
 **Output:**
+
 - Complete Pulumi TypeScript code
 - Interactive infrastructure diagram
 - Configurable component properties
@@ -227,7 +239,7 @@ pnpm ui:docker-run          # Run Docker container
 
 ### AI Integration
 
-Infra0 uses Anthropic's Claude to:
+Infra0 have support to both Anthropic's Claude and Google's Gemini to:
 
 1. **Parse Natural Language** - Understand infrastructure requirements from user descriptions
 2. **Generate Pulumi Code** - Create production-ready TypeScript code
@@ -248,16 +260,16 @@ interface Infra0 {
 }
 
 interface Infra0Resource {
-  type: string;         // Pulumi type (e.g., "aws:ec2:Vpc")
-  config: Record<string, any>;  // Constructor arguments
+  type: string; // Pulumi type (e.g., "aws:ec2:Vpc")
+  config: Record<string, any>; // Constructor arguments
   dependsOn?: string[]; // Dependencies
 }
 
 interface Infra0Node {
-  id: string;           // Matches resource key
-  label: string;        // Display name
-  parent?: string;      // For nesting
-  group?: string;       // For styling
+  id: string; // Matches resource key
+  label: string; // Display name
+  parent?: string; // For nesting
+  group?: string; // For styling
 }
 ```
 
@@ -326,7 +338,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-
 ## 📬 Support
 
 - 🐛 **Bug Reports**: [Create an issue](https://github.com/your-org/infra0/issues)
@@ -337,7 +348,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🗺️ Roadmap
 
 - [ ] **Multi-cloud Support** - Azure and GCP integration
-- [ ] **Advanced Diagrams** - 3D visualization and animations  
+- [ ] **Advanced Diagrams** - 3D visualization and animations
 - [ ] **Team Collaboration** - Real-time collaborative editing
 - [ ] **Infrastructure Testing** - Automated validation and testing
 - [ ] **Cost Optimization** - AI-powered cost analysis
@@ -352,4 +363,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   <p>
     <a href="#top">Back to top</a>
   </p>
-</div> 
+</div>

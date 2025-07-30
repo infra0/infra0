@@ -2,7 +2,14 @@ import { Request, Response } from "express";
 import { pulumiCode } from "../constants/pulumi";
 import * as conversationService from "../services/conversation.service";
 import { IUser } from "../model/user.model";
-import { ChatType, CLAUDE_MODELS, conversationHelper, Message } from "../llm";
+import {
+  ChatType,
+  CLAUDE_MODELS,
+  GEMINI_MODELS,
+  LLMProvider,
+  conversationHelper,
+  Message,
+} from "../llm";
 import { createInfra0 } from "../helpers/createInfra0";
 import { AppError } from "../errors/app-error";
 import httpStatus from "http-status";
@@ -13,7 +20,7 @@ import {
   InitialConversationsResponse,
 } from "../types/conversation.types";
 import { Status } from "../types/base";
-import fs from "fs";
+import { getPreferredLLMConfig } from "../helpers/llm";
 
 /*
 
@@ -26,15 +33,16 @@ Flows
 2. conversation continues
 
 */
-
 const chatCompletions = async (req: Request, res: Response) => {
   const { messages } = req.body;
+  const { provider, model } = getPreferredLLMConfig();
 
   try {
     const { streamResult } = await conversationHelper.streamAndCollectResponse({
       messages: messages,
       chatType: ChatType.CREATE,
-      model: CLAUDE_MODELS.SONNET_4,
+      provider: provider,
+      model: model,
       maxTokens: 64000,
     });
 
@@ -64,11 +72,13 @@ const create = async (
       content: prompt,
     },
   ];
+  const { provider, model } = getPreferredLLMConfig();
 
   const title = await conversationHelper.generateTitleForConversation({
     messages: messages,
     chatType: ChatType.TITLE,
-    model: CLAUDE_MODELS.SONNET_4,
+    provider: provider,
+    model: model,
     maxTokens: 1000,
   });
 
