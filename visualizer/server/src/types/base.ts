@@ -11,3 +11,4 @@ export enum Status {
   export interface BaseResponseWithData<T> extends BaseResponse {
     data: T;
   }
+

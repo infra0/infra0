@@ -3,7 +3,7 @@
 import type React from "react"
 import type { Message } from "ai"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,6 +14,10 @@ import SimpleInfrastructureResponse from "@/components/simple-infrastructure-res
 import { ChatRole, ChatSession } from "@/types/chat"
 import { generateId } from "@/lib/utils"
 import { useChat } from "@/hooks/use-chat"
+import { IConversation } from "@/services/conversation/conversation.service.types"
+import { createConversation, getConversations } from "@/services/conversation/conversation.service"
+import { toast } from "@/components/ui/use-toast"
+
 
 // Sample sessions
 const sampleSessions: ChatSession[] = [
@@ -45,24 +49,31 @@ function HomePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [conversations, setConversations] = useState<IConversation[]>([])
 
   const isWorking = isSubmitting && isLLMStreaming;
 
-  const handleNewSession = useCallback(() => {
-    const sessionId = generateId()
-    const newSession: ChatSession = {
-      id: sessionId,
-      title: "New Infrastructure Project",
-      messages: [],
-      nodes: [],
-      edges: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  useEffect(() => {
+    try {
+      const fetchConversations = async () => {
+        const { data } = await getConversations()
+        setConversations(data.conversations)
+      }
+      fetchConversations()
+    } catch (error) {
+      toast({
+        title: 'Error fetching conversations',
+        description: 'Please try again later',
+        variant: 'destructive',
+      })
     }
+  }, [])
 
-    setSessions((prev) => [newSession, ...prev])
-    router.push(`/project/${sessionId}`)
-  }, [router])
+  const handleNewSession = useCallback(() => {
+    // TODO call api and create a new conversation
+    // setSessions((prev) => [newSession, ...prev])
+    // router.push(`/project/${sessionId}`)
+  }, [])
 
   const handleSendMessage = useCallback(async () => {
     if (!input.trim() || isWorking || isSubmitting) return
@@ -72,8 +83,15 @@ function HomePage() {
       role: ChatRole.USER,
       content: input,
     }
-    
-    await append(message)
+
+    const [{ data }, _] = await Promise.all([
+      createConversation({
+        prompt: input,
+      }),
+      append(message)
+    ])
+
+    setConversations((prev) => [data, ...prev])
     setInput("")
     setIsSubmitting(false)
   }, [input, isWorking, append])
@@ -93,7 +111,8 @@ function HomePage() {
   )
 
   const handleDeleteSession = useCallback((sessionId: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId))
+    // TODO call api and delete that project
+    // setSessions((prev) => prev.filter((s) => s.id !== sessionId))
   }, [])
 
   return (
@@ -101,8 +120,7 @@ function HomePage() {
       {/* Chat History Sidebar - Full Height */}
       <div className="w-80 h-full">
         <ChatHistory
-          sessions={sessions}
-          currentSessionId={null}
+          sessions={conversations}
           onSelectSession={handleSelectSession}
           onNewSession={handleNewSession}
           onDeleteSession={handleDeleteSession}

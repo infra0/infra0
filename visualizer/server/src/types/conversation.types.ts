@@ -1,4 +1,5 @@
 import { BaseResponseWithData } from "./base";
+import { Infra0 } from "./infra";
 
 
 export interface CreateConversationRequest {
@@ -20,4 +21,15 @@ export interface InitialConversationResponse extends BaseResponseWithData<Conver
 
 export interface InitialConversationsResponse extends BaseResponseWithData<{
     conversations : ConversationData[];
+} | null> {}
+
+
+export interface IAddAssistantMessageRequest {
+    conversation_id : string;
+    message : string;
+    infra0: Infra0;
+}
+
+export interface IAddAssistantMessageResponse extends BaseResponseWithData<{
+    message : string;
 } | null> {}

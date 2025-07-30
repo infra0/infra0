@@ -14,7 +14,7 @@ export function useChat(id: string): ExtendedUseChatHelpers {
   
     const chat = useLLMChat({
       id,
-      api: `${process.env.NEXT_PUBLIC_API_URL}/api/v1/chat/completions`,
+      api: `${process.env.NEXT_PUBLIC_API_URL}/v1/chat/completions`,
       streamProtocol: 'text',
       maxSteps: 20,
       onFinish: (message, { finishReason }) => {

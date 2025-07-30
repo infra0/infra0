@@ -6,14 +6,20 @@ import { ChatType, CLAUDE_MODELS, conversationHelper, Message } from "../llm";
 import { createInfra0 } from "../helpers/createInfra0";
 import { AppError } from "../errors/app-error";
 import httpStatus from "http-status";
-import { createMessages, InputMessage } from "../services/message.service";
+import { createMessages, InputMessage, createMessage } from "../services/message.service";
+import { asyncHandler } from "../middleware/async-handler";
 import {
   CreateConversationRequest,
+  IAddAssistantMessageRequest,
+  IAddAssistantMessageResponse,
   InitialConversationResponse,
   InitialConversationsResponse,
 } from "../types/conversation.types";
 import { Status } from "../types/base";
 import fs from "fs";
+import mongoose from "mongoose";
+import { MessageRole } from "../model/Message.model";
+import { ObjectId } from "mongoose";
 
 /*
 
@@ -27,7 +33,7 @@ Flows
 
 */
 
-const chatCompletions = async (req: Request, res: Response) => {
+const chatCompletions = asyncHandler(async (req: Request, res: Response) => {
   const { messages } = req.body;
 
   try {
@@ -50,12 +56,12 @@ const chatCompletions = async (req: Request, res: Response) => {
     console.error("Error in conversation create:", error);
     res.status(500).json({ error: "Stream failed" });
   }
-};
+});
 
 const create = async (
   req: Request<{}, {}, CreateConversationRequest>,
   res: Response<InitialConversationResponse>
-) => {
+) => asyncHandler(async (req: Request<{}, {}, CreateConversationRequest>, res: Response<InitialConversationResponse>) => {
   const { prompt } = req.body;
 
   const messages: Message[] = [
@@ -88,7 +94,7 @@ const create = async (
     {
       role: "user",
       content: prompt,
-      conversation: conversation._id,
+      conversation: conversation._id.toString(),
     },
   ];
   await createMessages(inputMessages);
@@ -103,12 +109,12 @@ const create = async (
       updatedAt: conversation.updatedAt,
     },
   });
-};
+});
 
-const getAllConversations = async (
+const getAllConversations = asyncHandler(async (
   req: Request,
   res: Response<InitialConversationsResponse>
-) => {
+) => asyncHandler(async (req: Request, res: Response<InitialConversationsResponse>) => {
   const user = req.user as IUser;
   const conversations = await conversationService.getAllConversations(user._id);
 
@@ -125,6 +131,34 @@ const getAllConversations = async (
       })),
     },
   });
-};
+}));
 
-export { create, chatCompletions, getAllConversations };
+
+const addAssistantMessage = asyncHandler(async (req: Request<{}, {}, IAddAssistantMessageRequest>, res: Response<IAddAssistantMessageResponse>) => {
+  const { conversation_id, message, infra0 } = req.body;
+  const user = req.user as IUser;
+  
+  // Validate that the conversation exists and belongs to the user
+  const conversation = await conversationService.getConversation(conversation_id);
+  if (!conversation) {
+    throw new AppError("Conversation not found", httpStatus.NOT_FOUND);
+  }
+  
+  // Create the assistant message
+  const createdMessage = await createMessage({
+    role: "assistant" as MessageRole,
+    content: message,
+    infra0: infra0,
+    conversation: conversation_id,
+  });
+  
+  res.status(httpStatus.OK).json({
+    status: Status.SUCCESS,
+    message: "Assistant message added successfully",
+    data: {
+      message: createdMessage.content,
+    },
+  });
+});
+
+export { create, chatCompletions, getAllConversations, addAssistantMessage };
