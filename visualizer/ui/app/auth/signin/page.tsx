@@ -1,6 +1,6 @@
 "use client"
 
-import { useContext, useState } from "react"
+import { useContext, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sparkles, Loader2, ArrowLeft } from "lucide-react"
@@ -12,7 +12,7 @@ import { setCookie } from "cookies-next"
 import { TOKEN } from "@/constants/cookie"
 import { UserContext } from "@/contexts/user-context"
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState<string | null>(null)
@@ -181,5 +181,21 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function SignInFallback() {
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+    </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<SignInFallback />}>
+      <SignInContent />
+    </Suspense>
   )
 }
