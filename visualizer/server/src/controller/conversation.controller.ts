@@ -58,10 +58,10 @@ const chatCompletions = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-const create = async (
+const create = asyncHandler(async (
   req: Request<{}, {}, CreateConversationRequest>,
   res: Response<InitialConversationResponse>
-) => asyncHandler(async (req: Request<{}, {}, CreateConversationRequest>, res: Response<InitialConversationResponse>) => {
+) => {
   const { prompt } = req.body;
 
   const messages: Message[] = [
@@ -114,10 +114,9 @@ const create = async (
 const getAllConversations = asyncHandler(async (
   req: Request,
   res: Response<InitialConversationsResponse>
-) => asyncHandler(async (req: Request, res: Response<InitialConversationsResponse>) => {
+) => {
   const user = req.user as IUser;
   const conversations = await conversationService.getAllConversations(user._id);
-
   res.status(httpStatus.OK).json({
     status: Status.SUCCESS,
     message: "Conversations fetched successfully",
@@ -131,18 +130,20 @@ const getAllConversations = asyncHandler(async (
       })),
     },
   });
-}));
+});
 
 
 const addAssistantMessage = asyncHandler(async (req: Request<{}, {}, IAddAssistantMessageRequest>, res: Response<IAddAssistantMessageResponse>) => {
-  const { conversation_id, message, infra0 } = req.body;
+  const { conversation_id, message } = req.body;
   const user = req.user as IUser;
   
-  // Validate that the conversation exists and belongs to the user
+  // Validating that the conversation exists and belongs to the user
   const conversation = await conversationService.getConversation(conversation_id);
-  if (!conversation) {
-    throw new AppError("Conversation not found", httpStatus.NOT_FOUND);
+  if (!conversation || conversation.user.toString() !== user._id.toString()) {
+      throw new AppError("Conversation not found or not authorized", httpStatus.NOT_FOUND);
   }
+
+  const infra0 = createInfra0(message);
   
   // Create the assistant message
   const createdMessage = await createMessage({

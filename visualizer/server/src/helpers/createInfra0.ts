@@ -2,9 +2,8 @@ import { AppError } from "../errors/app-error";
 import { Infra0 } from "../types/infra";
 import httpStatus from "http-status";
 
-export const createInfra0 = async (response: string): Promise<Infra0> => {
+export const createInfra0 = (response: string): Infra0 | null => {
     try {
-        // Extract the infra0_schema section from the response
         const schemaMatch = response.match(/```infra0_schema\s*([\s\S]*?)\s*```/);
         
         if (!schemaMatch || !schemaMatch[1]) {
@@ -15,7 +14,7 @@ export const createInfra0 = async (response: string): Promise<Infra0> => {
         
         const parsedSchema: Infra0 = JSON.parse(schemaContent);
         
-        // Validate the structure
+        // Validating the structure
         if (!parsedSchema.resources || !parsedSchema.diagram) {
             throw new AppError("Invalid schema structure: missing resources or diagram", httpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -27,17 +26,6 @@ export const createInfra0 = async (response: string): Promise<Infra0> => {
         return parsedSchema;
     } catch (error) {
         console.error("Error parsing Infra0 schema:", error);
-        throw new AppError("Error parsing Infra0 schema", httpStatus.INTERNAL_SERVER_ERROR);
-        
-        // Return empty schema as fallback
-        const fallbackInfra0: Infra0 = {
-            resources: {},
-            diagram: {
-                nodes: [],
-                edges: []
-            }
-        };
-        
-        return fallbackInfra0;
+        return null;
     }
 }

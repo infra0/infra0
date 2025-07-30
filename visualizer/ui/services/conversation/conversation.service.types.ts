@@ -23,3 +23,12 @@ export interface ICreateConversationResponse extends IBaseResponse<{
     createdAt: string;
     updatedAt: string;
 }> {}
+
+export interface IAddAssistantMessageRequest {
+    conversation_id: string;
+    message: string;
+}
+
+export interface IAddAssistantMessageResponse extends IBaseResponse<{
+    message: string;
+}> {}

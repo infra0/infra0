@@ -45,13 +45,13 @@ function HomePage() {
   const router = useRouter()
   const [sessions, setSessions] = useState<ChatSession[]>(sampleSessions)
   const [input, setInput] = useState("")
-  const { isWorking : isLLMStreaming, append, messages } = useChat('user-chat-id')
+  const { isWorking : isLLMStreaming, append, messages, currentConversationId, setCurrentConversationId } = useChat('user-chat-id')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [conversations, setConversations] = useState<IConversation[]>([])
 
-  const isWorking = isSubmitting && isLLMStreaming;
+  const isWorking = isSubmitting || isLLMStreaming;
 
   useEffect(() => {
     try {
@@ -84,14 +84,14 @@ function HomePage() {
       content: input,
     }
 
-    const [{ data }, _] = await Promise.all([
-      createConversation({
-        prompt: input,
-      }),
-      append(message)
-    ])
-
+    const { data } = await createConversation({
+      prompt: input,
+    })
+    setCurrentConversationId(data._id)
     setConversations((prev) => [data, ...prev])
+
+    append(message)
+
     setInput("")
     setIsSubmitting(false)
   }, [input, isWorking, append])
