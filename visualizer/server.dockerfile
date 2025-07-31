@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-ENV NODE_ENV=production
+ENV NODE_ENV=developemnt
 
 RUN npm install -g pnpm
 

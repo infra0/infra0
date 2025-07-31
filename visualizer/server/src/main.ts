@@ -12,14 +12,26 @@ import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
+import seedRoutes from './routes/seed.route';
 
 const app = express();
 
-mongoose.connect(config.mongoDbUri).then(() => {
-    console.log('Database connected successfully!')
-}).catch(err => {
-    console.log('Database connection failed!', err)
-})
+async function connectWithRetry(retries = 5, delay = 1000) {
+    try {
+        await mongoose.connect(config.mongoDbUri);
+        console.log('Database connected successfully!');
+    } catch (err) {
+        if (retries > 0) {
+            console.log(`Database connection failed! Retrying in ${delay / 1000}s... (${retries} retries left)`, err);
+            setTimeout(() => connectWithRetry(retries - 1, delay * 2), delay);
+        } else {
+            console.error('Database connection failed after multiple attempts.', err);
+            throw err;
+        }
+    }
+}
+
+connectWithRetry();
 
 // Middleware
 app.use(express.json());
@@ -49,6 +61,8 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 
 app.use('/api/v1/chat', conversationRoutes);
+
+app.use('/api/v1/seed', seedRoutes);
 
 app.use(express.static(path.join(__dirname, 'visualizer-ui-build')));
 
