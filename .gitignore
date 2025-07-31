@@ -31,8 +31,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
 /**/.infra0/
 
-# AWS Data Pipeline Project
 aws-data-pipeline/
