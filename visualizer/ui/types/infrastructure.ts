@@ -58,3 +58,15 @@ export interface WorkflowStep {
   description: string
   status: "pending" | "active" | "completed"
 }
+
+
+export interface File {
+  name: string
+  type: string
+  content: string
+}
+
+export interface UserPrompt {
+  files: File[]
+  prompt: string
+}

@@ -1,6 +1,7 @@
 import type { 
   InfrastructureResponse, 
-  ParsedResponseState 
+  ParsedResponseState,
+  UserPrompt
 } from '@/types/infrastructure'
 import { ResponseSection } from '@/types/infrastructure'
 
@@ -86,6 +87,70 @@ export class InfrastructureResponseParser {
   static getConclusion(content: string) {
     const match = content.match(this.SECTION_PATTERNS[ResponseSection.OUTRO].end)
     return match ? match[1].trim() : null
+  }
+
+  static parseUserPrompt(content: string) : UserPrompt | null {
+    try {
+      let jsonPart = content.trim();
+      let textPrompt = '';
+
+      const jsonStartIndex = content.indexOf('{');
+      if (jsonStartIndex > 0) {
+        textPrompt = content.substring(0, jsonStartIndex).trim();
+        jsonPart = content.substring(jsonStartIndex);
+      }
+
+      const parsed = JSON.parse(jsonPart);
+      
+      if (!parsed || typeof parsed !== 'object') {
+        return {
+          files: [],
+          prompt: content
+        };
+      }
+
+      let files: any[] = [];
+      let prompt = textPrompt;
+
+      if (parsed.files && Array.isArray(parsed.files)) {
+        files = parsed.files;
+      } else if (Array.isArray(parsed)) {
+        files = parsed;
+      } else {
+        return {
+          files: [],
+          prompt: content
+        };
+      }
+
+      if (!prompt && parsed.prompt && typeof parsed.prompt === 'string') {
+        prompt = parsed.prompt;
+      }
+
+      const transformedFiles = files.map(file => {
+        let name = file.name || file.path || 'unknown';
+        name = name.split('/').pop() || name;
+        const content = file.content || '';
+        
+        let type = file.type || '';
+        return {
+          name: name.toString(),
+          type: type.toString(),
+          content: content.toString()
+        };
+      });
+
+      return {
+        files: transformedFiles,
+        prompt: prompt
+      };
+    } catch (error) {
+      console.warn('Failed to parse user prompt:', error);
+      return {
+        files: [],
+        prompt: content
+      };
+    }
   }
 
 
