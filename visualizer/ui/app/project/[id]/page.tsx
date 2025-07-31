@@ -14,18 +14,21 @@ import { type Infra0Node, type Infra0Edge, Infra0EdgeType, Infra0 } from "@/type
 import { ChatRole } from "@/types/chat"
 import { getAllMessages } from "@/services/conversation/conversation.service"
 import { useChat } from "@/hooks/use-chat"
+import { useRef } from "react"
 
 
-
-function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ need_streaming: string }> }) {
   const router = useRouter()
   const resolvedParams = use(params)
   const projectId = resolvedParams.id
+  const resolvedSearchParams = use(searchParams)
+  const needStreaming = resolvedSearchParams.need_streaming === "true"
 
-  const { messages, isWorking: isLLMStreaming, append, setMessages, setMessagesToInfra0Map, messagesToInfra0Map } = useChat(projectId)
+  const { messages, isWorking: isLLMStreaming, reload, append, setMessages, setMessagesToInfra0Map, messagesToInfra0Map, latestMessageIdToRender, setLatestMessageIdToRender } = useChat(projectId)
 
   const [nodes, setNodes] = useState<Infra0Node[]>([])
   const [edges, setEdges] = useState<Infra0Edge[]>([])
+  const [resources, setResources] = useState<Record<string, any>>({})
 
   const [flowDiagram, setFlowDiagram] = useState<Infra0 | null>(null)
 
@@ -36,6 +39,19 @@ function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const [projectTitle, setProjectTitle] = useState("Loading project...")
 
   const isWorking = isLLMStreaming || isGenerating;
+
+  const hasInitialStreamingCheckRef = useRef(false)
+
+  useEffect(() => {
+    if(latestMessageIdToRender) {
+      const infra0 = messagesToInfra0Map[latestMessageIdToRender]
+      if(infra0) {
+        setNodes(infra0.diagram.nodes)
+        setEdges(infra0.diagram.edges)
+        setResources(infra0.resources || {})
+      }
+    }
+  }, [latestMessageIdToRender])
 
   useEffect(() => {
     try {   
@@ -54,14 +70,15 @@ function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
 
         setMessages(aiMessagesToFeed)
 
-
         data.messages.forEach((message) => {
           if(message.role === ChatRole.ASSISTANT) {
             const infra0 = message.infra0
                       
           if(infra0) {
+            console.log({infra0})
             setNodes(infra0.diagram.nodes)
             setEdges(infra0.diagram.edges)
+            setResources(infra0.resources || {})
           }
           }
         })
@@ -84,6 +101,16 @@ function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
     }
   }, [projectId])
 
+  useEffect(() => {
+    if (hasInitialStreamingCheckRef.current) return
+    
+    const lastMessageRole = messages[messages.length - 1]?.role
+    if (needStreaming && lastMessageRole === ChatRole.USER) {
+      reload()
+      hasInitialStreamingCheckRef.current = true
+    }
+  }, [messages, needStreaming, reload])
+
 
   const handleSendMessage = useCallback(
     (content: string) => {
@@ -95,7 +122,7 @@ function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
       }, {
         body: {
           conversation_id: projectId,
-        }
+        },
       })
 
      setIsGenerating(false);
@@ -108,6 +135,16 @@ function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
     if(infra0) {
       setNodes(infra0.diagram.nodes)
       setEdges(infra0.diagram.edges)
+      setResources(infra0.resources || {})
+    } else {
+      if(latestMessageIdToRender) { // HACK - remove in future
+        const infra0 = messagesToInfra0Map[latestMessageIdToRender]
+        if(infra0) {
+          setNodes(infra0.diagram.nodes)
+          setEdges(infra0.diagram.edges)
+          setResources(infra0.resources || {})
+        }
+      }
     }
   } 
 
@@ -122,7 +159,7 @@ function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
           to: edge.to === nodeId ? updatedNode.id : edge.to,
         })),
       )
-    }
+    } 
   }
 
   // For DiagramState component - still needed for configuration
@@ -246,6 +283,7 @@ function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
       {/* Pulumi Config Modal */}
       <PulumiConfigModal
         node={selectedNode}
+        resources={resources}
         isOpen={isConfigModalOpen}
         onClose={handleCloseConfigModal}
         onSave={handleConfigSave}

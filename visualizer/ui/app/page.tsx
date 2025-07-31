@@ -22,7 +22,7 @@ import { toast } from "@/components/ui/use-toast"
 function HomePage() {
   const router = useRouter()
   const [input, setInput] = useState("")
-  const { isWorking : isLLMStreaming, append, messages, setCurrentConversationId } = useChat('user-chat-id')
+  const { isWorking : isLLMStreaming, append, messages, setCurrentConversationId, latestMessageIdToRender } = useChat('user-chat-id')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -45,6 +45,12 @@ function HomePage() {
       })
     }
   }, [])
+
+  useEffect(() => {
+    if(latestMessageIdToRender) {
+      router.push(`/project/${latestMessageIdToRender}`)
+    }
+  },[])
 
   const handleNewSession = useCallback(() => {
     // TODO call api and create a new conversation

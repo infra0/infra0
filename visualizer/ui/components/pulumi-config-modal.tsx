@@ -10,154 +10,57 @@ import type { Infra0Node } from "../types/infrastructure"
 
 interface PulumiConfigModalProps {
   node: Infra0Node | null
+  resources: Record<string, any>
   isOpen: boolean
   onClose: () => void
   onSave: (nodeId: string, config: Record<string, any>) => void
 }
 
-// Sample Pulumi configurations for different node types
-const getSampleConfig = (nodeType: string, nodeId: string): Record<string, any> => {
-  switch (nodeType) {
-    case "network":
-      if (nodeId.includes("vpc")) {
-        return {
-          cidrBlock: "10.0.0.0/16",
-          enableDnsHostnames: true,
-          enableDnsSupport: true,
-          tags: {
-            Name: "main-vpc",
-            Environment: "production",
-            ManagedBy: "pulumi",
-          },
-        }
-      } else if (nodeId.includes("subnet")) {
-        return {
-          cidrBlock: nodeId.includes("public") ? "10.0.1.0/24" : "10.0.2.0/24",
-          availabilityZone: "us-east-1a",
-          mapPublicIpOnLaunch: nodeId.includes("public"),
-          tags: {
-            Name: nodeId.includes("public") ? "public-subnet" : "private-subnet",
-            Type: nodeId.includes("public") ? "Public" : "Private",
-            Environment: "production",
-          },
-        }
-      } else if (nodeId.includes("gateway")) {
-        return {
-          tags: {
-            Name: `${nodeId}-gateway`,
-            Environment: "production",
-          },
-        }
-      } else if (nodeId.includes("load-balancer")) {
-        return {
-          loadBalancerType: "application",
-          scheme: "internet-facing",
-          securityGroups: ["sg-12345678"],
-          subnets: ["subnet-12345678", "subnet-87654321"],
-          enableDeletionProtection: false,
-          tags: {
-            Name: "main-alb",
-            Environment: "production",
-          },
-        }
-      }
-      break
-    case "compute":
-      if (nodeId.includes("ecs")) {
-        return {
-          name: "main-cluster",
-          capacityProviders: ["FARGATE", "FARGATE_SPOT"],
-          defaultCapacityProviderStrategy: [
-            {
-              capacityProvider: "FARGATE",
-              weight: 1,
-              base: 0,
-            },
-          ],
-          settings: [
-            {
-              name: "containerInsights",
-              value: "enabled",
-            },
-          ],
-          configuration: {
-            executeCommandConfiguration: {
-              logging: "DEFAULT",
-            },
-          },
-          tags: {
-            Name: "ecs-cluster",
-            Environment: "production",
-          },
-        }
-      }
-      break
-    case "database":
-      if (nodeId.includes("rds")) {
-        return {
-          allocatedStorage: 20,
-          maxAllocatedStorage: 100,
-          storageType: "gp3",
-          storageEncrypted: true,
-          engine: "postgres",
-          engineVersion: "15.4",
-          instanceClass: "db.t3.micro",
-          dbName: "myapp",
-          username: "admin",
-          passwordSecretArn: "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds-password",
-          vpcSecurityGroupIds: ["sg-12345678"],
-          dbSubnetGroupName: "main-db-subnet-group",
-          backupRetentionPeriod: 7,
-          backupWindow: "03:00-04:00",
-          maintenanceWindow: "sun:04:00-sun:05:00",
-          multiAz: false,
-          publiclyAccessible: false,
-          monitoringInterval: 60,
-          performanceInsightsEnabled: true,
-          tags: {
-            Name: "main-database",
-            Environment: "production",
-          },
-        }
-      }
-      break
-    case "storage":
-      return {
-        bucket: `${nodeId}-bucket-${Date.now()}`,
-        acl: "private",
-        versioning: {
-          enabled: true,
-        },
-        serverSideEncryptionConfiguration: {
-          rule: {
-            applyServerSideEncryptionByDefault: {
-              sseAlgorithm: "AES256",
-            },
-          },
-        },
-        publicAccessBlock: {
-          blockPublicAcls: true,
-          blockPublicPolicy: true,
-          ignorePublicAcls: true,
-          restrictPublicBuckets: true,
-        },
-        tags: {
-          Name: `${nodeId}-storage`,
-          Environment: "production",
-        },
-      }
-    default:
-      return {
-        tags: {
-          Name: nodeId,
-          Environment: "production",
-        },
-      }
+const parseNestedJsonStrings = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return obj
   }
+
+  if (typeof obj === 'string') {
+    const trimmed = obj.trim()
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+        (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(obj)
+        return parseNestedJsonStrings(parsed)
+      } catch (error) {
+        return obj
+      }
+    }
+    return obj
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => parseNestedJsonStrings(item))
+  }
+
+  if (typeof obj === 'object') {
+    const result: any = {}
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = parseNestedJsonStrings(value)
+    }
+    return result
+  }
+
+  return obj
+}
+
+const getActualResourceConfig = (node: Infra0Node, resources: Record<string, any>): Record<string, any> => {
+  const matchingResource = resources[node.id]
+  if (matchingResource) {
+    const config = matchingResource.config || matchingResource
+    return parseNestedJsonStrings(config)
+  }
+
   return {}
 }
 
-export default function PulumiConfigModal({ node, isOpen, onClose, onSave }: PulumiConfigModalProps) {
+export default function PulumiConfigModal({ node, resources, isOpen, onClose, onSave }: PulumiConfigModalProps) {
   const [config, setConfig] = useState<string>("")
   const [isValid, setIsValid] = useState(true)
   const [error, setError] = useState<string>("")
@@ -165,14 +68,14 @@ export default function PulumiConfigModal({ node, isOpen, onClose, onSave }: Pul
 
   useEffect(() => {
     if (node) {
-      const sampleConfig = getSampleConfig(node.type, node.id)
-      const formattedConfig = JSON.stringify(sampleConfig, null, 2)
+      const actualConfig = getActualResourceConfig(node, resources)
+      const formattedConfig = JSON.stringify(actualConfig, null, 2)
       setConfig(formattedConfig)
       setLineCount(formattedConfig.split("\n").length)
       setIsValid(true)
       setError("")
     }
-  }, [node])
+  }, [node, resources])
 
   const handleConfigChange = (value: string) => {
     setConfig(value)
@@ -275,7 +178,9 @@ export default function PulumiConfigModal({ node, isOpen, onClose, onSave }: Pul
             <div>
               <h3 className="text-xl font-semibold text-gray-100 mb-1">{node.label}</h3>
               <p className="text-sm text-gray-400">
-                Configure the Pulumi resource properties for this infrastructure component
+                {resources[node.id] ? 
+                  "Actual Pulumi resource configuration from your infrastructure" : 
+                  "Sample configuration (no actual resource found)"}
               </p>
             </div>
             <div className="flex items-center gap-3">

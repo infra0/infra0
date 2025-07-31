@@ -14,6 +14,8 @@ type ExtendedUseChatHelpers = UseChatHelpers & {
     setCurrentConversationId: (id: string) => void;
     messagesToInfra0Map: Record<string, Infra0>;
     setMessagesToInfra0Map: (map: Record<string, Infra0>) => void;
+    latestMessageIdToRender: string | null; // HACK - remove in future
+    setLatestMessageIdToRender: (id: string) => void; // HACK - remove in future
 };
 
 
@@ -24,6 +26,8 @@ export function useChat(id: string): ExtendedUseChatHelpers {
     const [currentConversationId, setCurrentConversationIdState] = useState<string>(id);
 
     const [messagesToInfra0Map, setMessagesToInfra0Map] = useState<Record<string, Infra0>>({});
+
+    const [latestMessageIdToRender, setLatestMessageIdToRender] = useState<string | null>(null);
 
     // Update both ref and state when conversation ID changes
     const setCurrentConversationId = (newId: string) => {
@@ -39,7 +43,7 @@ export function useChat(id: string): ExtendedUseChatHelpers {
       onFinish: async (message, { finishReason }) => {
         console.log('🔚 Stream finished:', finishReason, message);
         lastMessageRef.current = null;
-        
+
         const latestConversationId = conversationIdRef.current;
         // TODO: Avoinding finishReason for sometime, will pick this asap
         // if(finishReason === 'stop') {
@@ -47,6 +51,7 @@ export function useChat(id: string): ExtendedUseChatHelpers {
             conversation_id: latestConversationId,
             message: message.content
           })
+          setLatestMessageIdToRender(data._id);
           setMessagesToInfra0Map((prev) => ({
             ...prev,
             [data._id]: data.infra0
@@ -78,7 +83,9 @@ export function useChat(id: string): ExtendedUseChatHelpers {
       isWorking: chat.status === 'streaming' || chat.status === 'submitted',
       currentInfrastructureResponse,
       messagesToInfra0Map,
-      setMessagesToInfra0Map
+      setMessagesToInfra0Map,
+      latestMessageIdToRender,
+      setLatestMessageIdToRender
 
     };
 }
