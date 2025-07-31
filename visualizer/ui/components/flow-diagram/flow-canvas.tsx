@@ -129,7 +129,7 @@ export default function FlowCanvas({
       nodeTypes={nodeTypes}
       fitView
       attributionPosition="bottom-left"
-      className="bg-transparent"
+      className="bg-black"
       defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
       connectionLineStyle={{
         stroke: "#60a5fa",

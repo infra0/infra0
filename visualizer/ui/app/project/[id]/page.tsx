@@ -104,10 +104,12 @@ function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>
   useEffect(() => {
     if (hasInitialStreamingCheckRef.current) return
     
-    const lastMessageRole = messages[messages.length - 1]?.role
+    const lastMessageRole = messages[messages.length - 1]?.role    
     if (needStreaming && lastMessageRole === ChatRole.USER) {
       reload()
       hasInitialStreamingCheckRef.current = true
+      // remove need_streaming param from search param
+      router.replace(`/project/${projectId}`)
     }
   }, [messages, needStreaming, reload])
 

@@ -62,7 +62,8 @@ export default function ChatInterface({
 
   const formatMessage = (message: Message) => {
     if (message.role === ChatRole.USER) {
-      return message.content;
+      const userPrompt = InfrastructureResponseParser.parseUserPrompt(message.content);
+      return userPrompt?.prompt;
     }
 
     if (message.role === ChatRole.ASSISTANT) {
@@ -72,19 +73,6 @@ export default function ChatInterface({
     return null;
   };
 
-  // Helper function to extract files from message content or metadata
-  const getMessageFiles = (message: Message) => {
-    // Sample files for testing - replace with actual parser function
-    if (message.role === ChatRole.USER) {
-      return [
-        { name: "config.yaml", type: "yaml" },
-        { name: "infrastructure.tf", type: "terraform" },
-        { name: "README.md", type: "markdown" }
-      ];
-    }
-    
-    return [];
-  };
 
   return (
     <div className="h-full flex flex-col bg-white/[0.02] border border-white/[0.08] rounded-xl">
@@ -156,7 +144,8 @@ export default function ChatInterface({
                       
                       {/* Files display for user messages */}
                       {message.role === ChatRole.USER && (() => {
-                        const files = getMessageFiles(message);
+                        const userPrompt = InfrastructureResponseParser.parseUserPrompt(message.content);
+                        const files = userPrompt?.files || [];
                         return files.length > 0 ? (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {files.map((file, fileIndex) => (
