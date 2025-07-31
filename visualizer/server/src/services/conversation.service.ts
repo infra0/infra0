@@ -6,13 +6,13 @@ const createConversation = async (title: string, user: ObjectId) => {
     return conversation;
 }
 
-const getConversation = async (id: ObjectId) => {
+const getConversation = async (id: string) => {
     const conversation = await ConversationModel.findById(id);
     return conversation;
 }
 
 const getAllConversations = async (user: ObjectId) => {
-    const conversations = await ConversationModel.find({ user }).populate('total_messages_count');
+    const conversations = await ConversationModel.find({ user }).populate('total_messages_count').sort('-createdAt');
     return conversations;
 }
 
@@ -21,5 +21,6 @@ const getConversationWithMessages = async (id: ObjectId) => {
     const conversation = await ConversationModel.findById(id).populate('messageList');
     return conversation;
 }
+
 
 export { createConversation, getConversation, getAllConversations, getConversationWithMessages };

@@ -3,11 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageSquare, Trash2, Plus, ChevronLeft } from "lucide-react"
-import type { ChatSession } from "../types/chat"
+import { IConversation } from "@/services/conversation/conversation.service.types"
 
 interface ChatHistoryProps {
-  sessions: ChatSession[]
-  currentSessionId: string | null
+  sessions: IConversation[]
   onSelectSession: (sessionId: string) => void
   onNewSession: () => void
   onDeleteSession: (sessionId: string) => void
@@ -17,7 +16,6 @@ interface ChatHistoryProps {
 
 export default function ChatHistory({
   sessions,
-  currentSessionId,
   onSelectSession,
   onNewSession,
   onDeleteSession,
@@ -26,13 +24,13 @@ export default function ChatHistory({
     const now = new Date()
     const diff = now.getTime() - date.getTime()
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
+    
     if (days === 0) return "Today"
     if (days === 1) return "Yesterday"
     if (days < 7) return `${days} days ago`
     return date.toLocaleDateString()
   }
-
+  
   return (
     <div className="w-80 h-full bg-[#0a0a0a] border-r border-white/[0.08] flex flex-col">
       {/* Header */}
@@ -55,20 +53,20 @@ export default function ChatHistory({
         <div className="space-y-1">
           {sessions.map((session) => (
             <div
-              key={session.id}
+              key={session._id}
               className={`group relative p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                currentSessionId === session.id
-                  ? "bg-white/[0.08] border border-white/[0.12]"
-                  : "hover:bg-white/[0.04] border border-transparent"
+                "hover:bg-white/[0.04] border border-transparent"
               }`}
-              onClick={() => onSelectSession(session.id)}
+              onClick={() => onSelectSession(session._id)}
             >
               <div className="flex items-start gap-3">
                 <MessageSquare className="w-4 h-4 text-white/40 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-white/90 truncate leading-5">{session.title}</h4>
-                  <p className="text-xs text-white/50 mt-1">{formatDate(session.updatedAt)}</p>
-                  <p className="text-xs text-white/40 mt-0.5">{session.messages.length} messages</p>
+                  <h4 className="text-sm font-medium text-white/90 leading-5 line-clamp-2">
+                    {session.title}
+                  </h4>
+                  <p className="text-xs text-white/50 mt-1">{formatDate(new Date(session.updatedAt))}</p>
+                  <p className="text-xs text-white/40 mt-0.5">{session.total_messages_count} messages</p>
                 </div>
               </div>
 
@@ -76,7 +74,7 @@ export default function ChatHistory({
               <Button
                 onClick={(e) => {
                   e.stopPropagation()
-                  onDeleteSession(session.id)
+                  onDeleteSession(session._id)
                 }}
                 variant="ghost"
                 size="sm"

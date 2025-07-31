@@ -10,6 +10,8 @@ export interface IMessage extends Document<ObjectId> {
   role: MessageRole;
   content: string;
   infra0?: Infra0; // Optional - only populated for assistant responses that generate infrastructure
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Message Schema

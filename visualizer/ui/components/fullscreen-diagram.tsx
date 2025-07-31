@@ -10,11 +10,10 @@ import type { Infra0Node, Infra0Edge } from "@/types/infrastructure"
 interface FullscreenDiagramProps {
   nodes: Infra0Node[]
   edges: Infra0Edge[]
-  onNodeClick: (node: Infra0Node) => void
-  onNodesChange?: (nodes: Infra0Node[]) => void
+  onNodeClick?: (node: Infra0Node) => void
 }
 
-export default function FullscreenDiagram({ nodes, edges, onNodeClick, onNodesChange }: FullscreenDiagramProps) {
+export default function FullscreenDiagram({ nodes, edges, onNodeClick }: FullscreenDiagramProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   return (
@@ -71,7 +70,7 @@ export default function FullscreenDiagram({ nodes, edges, onNodeClick, onNodesCh
 
           {/* Fullscreen Diagram */}
           <div className="w-full h-full pt-20">
-            <FlowDiagram nodes={nodes} edges={edges} onNodeClick={onNodeClick} onNodesChange={onNodesChange} />
+            <FlowDiagram nodes={nodes} edges={edges} onNodeClick={onNodeClick} />
           </div>
         </DialogContent>
       </Dialog>

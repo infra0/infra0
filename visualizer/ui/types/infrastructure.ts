@@ -49,6 +49,7 @@ export enum ResponseSection {
 
 export interface ParsedResponseState {
   sections: InfrastructureResponse
+  activeSection: ResponseSection
 }
 
 export interface WorkflowStep {

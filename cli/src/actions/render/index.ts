@@ -48,8 +48,8 @@ export const addRenderAction = (program: Command) => {
       };
 
       // --- Docker Compose (commented out for now) ---
-      await dockerComposePull(dockerComposeOptions);
-      await dockerComposeUp(dockerComposeOptions, true);
+      // await dockerComposePull(dockerComposeOptions);
+      // await dockerComposeUp(dockerComposeOptions, true);
       console.log("Infra0 Visualizer is running!");
       console.log("UI: http://localhost:3000");
       console.log("Server: http://localhost:4000");
