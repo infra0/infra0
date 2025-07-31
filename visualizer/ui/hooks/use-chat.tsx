@@ -1,21 +1,29 @@
 import { useChat as useLLMChat, type UseChatHelpers } from '@ai-sdk/react';
-import type { Message } from 'ai';
+import type { Message as AIMessage } from 'ai';
 import { useRef, useMemo, useState } from 'react';
 import { InfrastructureResponseParser } from '@/lib/response-parser';
 import type { ParsedResponseState } from '@/types/infrastructure';
 import { addAssistantMessage } from '@/services/conversation/conversation.service';
+import type { Infra0 } from '@/types/infrastructure';
+
 
 type ExtendedUseChatHelpers = UseChatHelpers & {
     isWorking: boolean;
     currentInfrastructureResponse?: ParsedResponseState;
     currentConversationId: string;
     setCurrentConversationId: (id: string) => void;
+    messagesToInfra0Map: Record<string, Infra0>;
+    setMessagesToInfra0Map: (map: Record<string, Infra0>) => void;
 };
 
+
+
 export function useChat(id: string): ExtendedUseChatHelpers {
-    const lastMessageRef = useRef<Message | null>(null);
+    const lastMessageRef = useRef<AIMessage | null>(null); 
     const conversationIdRef = useRef<string>(id);
     const [currentConversationId, setCurrentConversationIdState] = useState<string>(id);
+
+    const [messagesToInfra0Map, setMessagesToInfra0Map] = useState<Record<string, Infra0>>({});
 
     // Update both ref and state when conversation ID changes
     const setCurrentConversationId = (newId: string) => {
@@ -39,6 +47,10 @@ export function useChat(id: string): ExtendedUseChatHelpers {
             conversation_id: latestConversationId,
             message: message.content
           })
+          setMessagesToInfra0Map((prev) => ({
+            ...prev,
+            [data._id]: data.infra0
+          }))
         // }
       },
       onError: (error) => {
@@ -47,9 +59,11 @@ export function useChat(id: string): ExtendedUseChatHelpers {
       },
       onResponse: (response) => {
         console.log('📡 Response received:', response.status, response.headers);
+        console.log('🌊 Streaming response:', response);
       },
     });
-
+    
+    
     const currentInfrastructureResponse = useMemo(() => {
       const lastMessage = chat.messages[chat.messages.length - 1]
       if (!lastMessage || lastMessage.role !== 'assistant') return undefined
@@ -63,5 +77,8 @@ export function useChat(id: string): ExtendedUseChatHelpers {
       setCurrentConversationId, // This updates both ref and state
       isWorking: chat.status === 'streaming' || chat.status === 'submitted',
       currentInfrastructureResponse,
+      messagesToInfra0Map,
+      setMessagesToInfra0Map
+
     };
 }

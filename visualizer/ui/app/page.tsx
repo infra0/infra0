@@ -11,41 +11,18 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Plus, Sparkles, ArrowUp, Loader2 } from "lucide-react"
 import ChatHistory from "@/components/chat-history"
 import SimpleInfrastructureResponse from "@/components/simple-infrastructure-response"
-import { ChatRole, ChatSession } from "@/types/chat"
-import { generateId } from "@/lib/utils"
+import { ChatRole } from "@/types/chat"
 import { useChat } from "@/hooks/use-chat"
 import { IConversation } from "@/services/conversation/conversation.service.types"
 import { createConversation, getConversations } from "@/services/conversation/conversation.service"
 import { toast } from "@/components/ui/use-toast"
 
 
-// Sample sessions
-const sampleSessions: ChatSession[] = [
-  {
-    id: "session-1",
-    title: "AWS VPC with ECS and RDS",
-    messages: [],
-    nodes: [],
-    edges: [],
-    createdAt: new Date(Date.now() - 86400000),
-    updatedAt: new Date(Date.now() - 3600000),
-  },
-  {
-    id: "session-2",
-    title: "GCP Kubernetes Cluster",
-    messages: [],
-    nodes: [],
-    edges: [],
-    createdAt: new Date(Date.now() - 172800000),
-    updatedAt: new Date(Date.now() - 7200000),
-  },
-]
 
 function HomePage() {
   const router = useRouter()
-  const [sessions, setSessions] = useState<ChatSession[]>(sampleSessions)
   const [input, setInput] = useState("")
-  const { isWorking : isLLMStreaming, append, messages, currentConversationId, setCurrentConversationId } = useChat('user-chat-id')
+  const { isWorking : isLLMStreaming, append, messages, setCurrentConversationId } = useChat('user-chat-id')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -266,7 +243,7 @@ function HomePage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  placeholder="Ask v0 to build..."
+                  placeholder="Ask infrastructure assistant to build..."
                   className="min-h-[60px] max-h-[120px] bg-white/[0.04] border-white/[0.12] text-white/95 placeholder:text-white/40 resize-none focus:border-white/[0.2] focus:ring-1 focus:ring-white/[0.1] rounded-xl text-sm leading-relaxed pr-12"
                   disabled={isWorking}
                 />

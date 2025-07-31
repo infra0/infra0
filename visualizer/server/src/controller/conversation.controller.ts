@@ -6,7 +6,7 @@ import { ChatType, CLAUDE_MODELS, conversationHelper, Message } from "../llm";
 import { createInfra0 } from "../helpers/createInfra0";
 import { AppError } from "../errors/app-error";
 import httpStatus from "http-status";
-import { createMessages, InputMessage, createMessage } from "../services/message.service";
+import { createMessages, InputMessage, createMessage, getMessages } from "../services/message.service";
 import { asyncHandler } from "../middleware/async-handler";
 import {
   CreateConversationRequest,
@@ -14,6 +14,8 @@ import {
   IAddAssistantMessageResponse,
   InitialConversationResponse,
   InitialConversationsResponse,
+  IGetAllMessagesRequest,
+  IGetAllMessagesResponse,
 } from "../types/conversation.types";
 import { Status } from "../types/base";
 import fs from "fs";
@@ -34,9 +36,22 @@ Flows
 */
 
 const chatCompletions = asyncHandler(async (req: Request, res: Response) => {
-  const { messages } = req.body;
+  const { messages, conversation_id } = req.body;
 
   try {
+
+    if(conversation_id) {
+        const lastMessage = messages[messages.length - 1];
+    
+        const inputMessage: InputMessage = {
+            role: "user",
+            content: lastMessage.content,
+            conversation: conversation_id,
+        }
+        await createMessage(inputMessage);
+    }
+
+
     const { streamResult } = await conversationHelper.streamAndCollectResponse({
       messages: messages,
       chatType: ChatType.CREATE,
@@ -157,9 +172,42 @@ const addAssistantMessage = asyncHandler(async (req: Request<{}, {}, IAddAssista
     status: Status.SUCCESS,
     message: "Assistant message added successfully",
     data: {
+      _id: createdMessage._id.toString(),
       message: createdMessage.content,
+      infra0: createdMessage.infra0,
     },
   });
 });
 
-export { create, chatCompletions, getAllConversations, addAssistantMessage };
+
+const getAllMessages = asyncHandler(async (req: Request<{},{},IGetAllMessagesRequest>, res: Response<IGetAllMessagesResponse>) => {
+    const { conversation_id } = req.body;
+    const user = req.user as IUser;
+    
+    const conversation = await conversationService.getConversation(conversation_id);
+    if (!conversation || conversation.user.toString() !== user._id.toString()) {
+      throw new AppError("Conversation not found or not authorized", httpStatus.NOT_FOUND);
+    }
+  
+    const messages = await getMessages(conversation_id);
+
+    res.status(httpStatus.OK).json({
+        status: Status.SUCCESS,
+        message: "Messages fetched successfully",
+        data: { 
+            _id: conversation._id.toString(),
+            title: conversation.title.toString(),
+            total_messages_count: conversation.total_messages_count ?? 0,
+            messages: messages.map((message) => ({
+                _id: message._id.toString(),
+                role: message.role,
+                content: message.content,
+                infra0: message.infra0 ?? null,
+                createdAt: message.createdAt.toISOString(),
+                updatedAt: message.updatedAt.toISOString(),
+            })),
+         },
+      });
+  });
+
+export { create, chatCompletions, getAllConversations, addAssistantMessage, getAllMessages };

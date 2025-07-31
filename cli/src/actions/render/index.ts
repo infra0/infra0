@@ -21,11 +21,11 @@ export const addRenderAction = (program: Command) => {
                 workingDirectory
             };
 
-            // Pull latest images
-            await dockerComposePull(dockerComposeOptions);
+            // // Pull latest images
+            // await dockerComposePull(dockerComposeOptions);
             
-            // Start services in detached mode
-            await dockerComposeUp(dockerComposeOptions, true);
+            // // Start services in detached mode
+            // await dockerComposeUp(dockerComposeOptions, true);
             
             console.log("Infra0 Visualizer is running!");
             console.log("UI: http://localhost:3000");

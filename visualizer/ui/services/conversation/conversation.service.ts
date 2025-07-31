@@ -1,5 +1,5 @@
 import axios from "@/lib/axios";
-import { IAddAssistantMessageRequest, IAddAssistantMessageResponse, ICreateConversationRequest, ICreateConversationResponse, IGetConversationsResponse } from "./conversation.service.types";
+import { IAddAssistantMessageRequest, IAddAssistantMessageResponse, ICreateConversationRequest, ICreateConversationResponse, IGetAllMessagesRequest, IGetAllMessagesResponse, IGetConversationsResponse } from "./conversation.service.types";
 
 export const getConversations = async () => {
     const { data } = await axios.get<IGetConversationsResponse>('/v1/chat');
@@ -14,5 +14,11 @@ export const createConversation = async (payload : ICreateConversationRequest) =
 
 export const addAssistantMessage = async (payload : IAddAssistantMessageRequest) => {
     const { data } = await axios.post<IAddAssistantMessageResponse>('/v1/chat/add-assistant-message', payload);
+    return data;
+}
+
+
+export const getAllMessages = async (payload : IGetAllMessagesRequest) => {
+    const { data } = await axios.post<IGetAllMessagesResponse>('/v1/chat/get-all-messages', payload);
     return data;
 }

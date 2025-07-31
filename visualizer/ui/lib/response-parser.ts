@@ -25,6 +25,13 @@ export class InfrastructureResponseParser {
     }
   }
 
+  static readonly SECTION_ORDER = [
+    ResponseSection.INTRO,
+    ResponseSection.PULUMI_CODE,
+    ResponseSection.INFRA0_SCHEMA,
+    ResponseSection.OUTRO
+  ]
+
   static parseStreamingResponse(content: string): ParsedResponseState {
     const sections: InfrastructureResponse = {}
     const foundSections = new Set<ResponseSection>()
@@ -61,10 +68,26 @@ export class InfrastructureResponseParser {
       }
     }
 
+    let activeSection = this.SECTION_ORDER[0]
+
+    for(const section of this.SECTION_ORDER.reverse()) {
+      if(foundSections.has(section)) {
+        activeSection = section
+        break;
+      }
+    }
+
     return {
       sections,
+      activeSection,
     }
   }
+
+  static getConclusion(content: string) {
+    const match = content.match(this.SECTION_PATTERNS[ResponseSection.OUTRO].end)
+    return match ? match[1].trim() : null
+  }
+
 
 }
 

@@ -12,3 +12,9 @@ export const addAssistantMessage = Joi.object({
         message: Joi.string().required(),
     })
 });
+
+export const getAllMessages = Joi.object({
+    body: Joi.object().keys({
+        conversation_id: Joi.string().required(),
+    })
+});
