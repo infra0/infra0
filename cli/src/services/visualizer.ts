@@ -50,3 +50,11 @@ export const createConversation = async (authToken: string, prompt: string) => {
     });
     return response.data.data._id;
 }
+
+const visualizerUIBaseUrl = () => {
+    return process.env.VISUALIZER_UI_URL || 'http://localhost:3000';
+}
+
+export const getVisualizerConversationUrl = (conversationId: string) => {
+    return `${visualizerUIBaseUrl()}/project/${conversationId}?need_streaming=true`;
+}
