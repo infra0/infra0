@@ -1,9 +1,9 @@
 import { prompt } from 'enquirer';
 import { ConversationSelection } from './types';
-import { createConversation } from '../../services/visualizerApi';
+import { createConversation } from '../../services/visualizer';
 import { getFilesInDirectory } from '../shared/helpers/directoryHelper';
 import { validateFileNames } from '../shared/helpers/validationHelper';
-import { readFilesForConversation } from '../shared/helpers/fileHelper';
+import { readFilesForConversationAndGeneratePrompt } from '../shared/helpers/fileHelper';
 import path from 'path';
 import { Infra0ProjectJSON } from '../shared/types';
 
@@ -45,7 +45,7 @@ export const intiateNewConversation = async (token: string, projectJSON: Infra0P
     
     const filteredFiles = validateFileNames(files);
 
-    const prompt = readFilesForConversation(filteredFiles);
+    const prompt = readFilesForConversationAndGeneratePrompt(filteredFiles);
     const conversationId = await createConversation(token, prompt);
     return conversationId;
 }

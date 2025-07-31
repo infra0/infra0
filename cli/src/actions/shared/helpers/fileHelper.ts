@@ -27,11 +27,17 @@ export function readFile(filePath: string): string {
 }
 
 /**
- * Read multiple files and return the content of each, separated with line breaks.
- * Each file's content starts with its path for context.
+ * Read multiple files and return the content of each, in a JSON object.
+ * The JSON object has a files array, each file has a path and content property.
  * @param filePaths - The paths to the files to read
  * @returns string - The combined formatted content of all files
  */
-export function readFilesForConversation(filePaths: string[]): string {
-    return filePaths.map((filePath) => `File: ${filePath}\n\n${readFile(filePath)}`).join('\n\n---\n\n');
+export function readFilesForConversationAndGeneratePrompt(filePaths: string[]): string {
+    const promptObject = {
+        files: filePaths.map((filePath) => ({
+            path: filePath,
+            content: readFile(filePath)
+        }))
+    }
+    return JSON.stringify(promptObject, null, 2);
 }

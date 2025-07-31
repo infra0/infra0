@@ -26,7 +26,8 @@ import {
   seedUser,
   getUserWithToken,
   getConversations,
-} from '../../services/visualizerApi';
+  getVisualizerConversationUrl,
+} from '../../services/visualizer';
 
 export const addRenderAction = (program: Command) => {
   program.action(async () => {
@@ -121,7 +122,9 @@ export const addRenderAction = (program: Command) => {
           ? await intiateNewConversation(token, projectJSON)
           : selectedConversation.id;
 
-      console.log(conversationToRender);
+      // Redirect user to the visualizer UI
+      const visualizerUrl = getVisualizerConversationUrl(conversationToRender);
+      console.log(`Visualizer running at: ${visualizerUrl}`);
     } catch (error) {
       if (error instanceof Error) {
         console.error(`❌ ${error.message}`);

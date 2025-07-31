@@ -8,15 +8,15 @@
         "dev": "ts-node src/main.ts"
     },
     "dependencies": {
+        "axios": "^1.7.9",
         "commander": "^13.1.0",
-        "typescript": "^5.4.0",
         "dotenv": "^16.4.7",
         "enquirer": "^2.3.6",
         "mongoose": "^8.9.3",
-        "axios": "^1.7.9"
+        "typescript": "^5.4.0"
     },
     "devDependencies": {
-        "ts-node": "^10.9.2",
-        "@types/express": "^5.0.0"
+        "@types/express": "^5.0.0",
+        "ts-node": "^10.9.2"
     }
 }
