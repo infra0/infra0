@@ -13,6 +13,7 @@ import {
   Bot,
   Loader2,
   CheckCircle,
+  File,
 } from "lucide-react";
 import CompactWorkflow from "./compact-workflow";
 import type { Message } from "ai";
@@ -71,6 +72,20 @@ export default function ChatInterface({
     return null;
   };
 
+  // Helper function to extract files from message content or metadata
+  const getMessageFiles = (message: Message) => {
+    // Sample files for testing - replace with actual parser function
+    if (message.role === ChatRole.USER) {
+      return [
+        { name: "config.yaml", type: "yaml" },
+        { name: "infrastructure.tf", type: "terraform" },
+        { name: "README.md", type: "markdown" }
+      ];
+    }
+    
+    return [];
+  };
+
   return (
     <div className="h-full flex flex-col bg-white/[0.02] border border-white/[0.08] rounded-xl">
       {/* Chat Header */}
@@ -109,8 +124,11 @@ export default function ChatInterface({
 
           {messages.map((message, index) => {
             const isLastMessage = index === messages.length - 1;
-            const isLastMessageGenerating = isGenerating && isLastMessage && message.role === ChatRole.ASSISTANT;
-            
+            const isLastMessageGenerating =
+              isGenerating &&
+              isLastMessage &&
+              message.role === ChatRole.ASSISTANT;
+
             return (
               <div
                 key={message.id}
@@ -124,33 +142,48 @@ export default function ChatInterface({
                   </div>
                 )}
 
-                <div
-                  className={`max-w-[85%] rounded-xl px-4 py-3 ${
-                    message.role === "user"
-                      ? "bg-white text-black"
-                      : "bg-white/[0.04] text-white/95 border border-white/[0.08]"
-                  }`}
-                >
+                <div className="max-w-[85%] rounded-xl px-4 py-3 bg-white/[0.04] text-white/95 border border-white/[0.08]">
                   {isLastMessageGenerating ? (
-                    <CompactWorkflow message={message} isWorking={isGenerating} />
+                    <CompactWorkflow
+                      message={message}
+                      isWorking={isGenerating}
+                    />
                   ) : (
                     <>
-                                             <div className="text-sm leading-relaxed">
-                         {formatMessage(message)}
-                       </div>
+                      <div className="text-sm leading-relaxed">
+                        {formatMessage(message)}
+                      </div>
+                      
+                      {/* Files display for user messages */}
+                      {message.role === ChatRole.USER && (() => {
+                        const files = getMessageFiles(message);
+                        return files.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {files.map((file, fileIndex) => (
+                              <div
+                                key={fileIndex}
+                                className="inline-flex items-center gap-1.5 text-xs font-medium text-white/80 bg-white/[0.08] border border-white/[0.12] px-2.5 py-1 rounded-md hover:bg-white/[0.12] hover:border-white/[0.16] transition-all duration-200"
+                              >
+                                <File className="w-3 h-3 text-white/60" />
+                                <span className="truncate max-w-[120px]">{file.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null;
+                      })()}
+                      
+                      {/* View Diagram button for assistant messages */}
                       {message.role === ChatRole.ASSISTANT && (
-                        <div onClick={() => updateDiagram(message.id)} className="inline-flex mt-2 items-center gap-1 text-sm text-green-400 bg-green-400/10 border border-green-400/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-green-400/20 hover:border-green-400/40 transition-all duration-200 hover:scale-[1.02] w-full">
+                        <div
+                          onClick={() => updateDiagram(message.id)}
+                          className="inline-flex mt-2 items-center gap-1 text-sm text-green-400 bg-green-400/10 border border-green-400/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-green-400/20 hover:border-green-400/40 transition-all duration-200 hover:scale-[1.02] w-full"
+                        >
                           <CheckCircle className="w-3 h-3" />
                           View Diagram
                         </div>
                       )}
-                      <div
-                        className={`text-xs mt-2 ${
-                          message.role === "user"
-                            ? "text-black/60"
-                            : "text-white/50"
-                        }`}
-                      >
+                      
+                      <div className="text-xs mt-2 text-white/50">
                         {formatTimestamp(message.createdAt ?? new Date())}
                       </div>
                     </>
@@ -158,8 +191,8 @@ export default function ChatInterface({
                 </div>
 
                 {message.role === "user" && (
-                  <div className="w-8 h-8 bg-white/[0.12] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <User className="w-4 h-4 text-white/80" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-sm border border-slate-200/60">
+                    <User className="w-4 h-4 text-slate-600" />
                   </div>
                 )}
               </div>

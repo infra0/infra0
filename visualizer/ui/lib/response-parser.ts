@@ -1,6 +1,7 @@
 import type { 
   InfrastructureResponse, 
-  ParsedResponseState 
+  ParsedResponseState,
+  UserPrompt
 } from '@/types/infrastructure'
 import { ResponseSection } from '@/types/infrastructure'
 
@@ -86,6 +87,10 @@ export class InfrastructureResponseParser {
   static getConclusion(content: string) {
     const match = content.match(this.SECTION_PATTERNS[ResponseSection.OUTRO].end)
     return match ? match[1].trim() : null
+  }
+
+  static parseUserPrompt(content: string) : UserPrompt | null {
+    return null; // TODO: Implement this
   }
 
 
