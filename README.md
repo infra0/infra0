@@ -2,18 +2,15 @@
 
 **AI-Powered Infrastructure as Code Generator**
 
-Generate production-ready Pulumi infrastructure code from natural language descriptions with interactive visual diagrams.
+Generate production-ready infrastructure code from natural language descriptions with interactive visual diagrams.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Pulumi](https://img.shields.io/badge/Pulumi-8A2BE2?logo=pulumi&logoColor=white)](https://www.pulumi.com/)
 
 ---
 
 ## ✨ Features
 
-🤖 **AI-Powered Generation** - Describe your infrastructure in plain English and get production-ready Pulumi TypeScript code
+🤖 **AI-Powered Generation** - Describe your infrastructure in plain English and get production-ready IaC code
 
 📊 **Interactive Diagrams** - Visualize your infrastructure with interactive flow diagrams powered by React Flow
 
@@ -48,7 +45,6 @@ infra0/
 - **CLI**: Commander.js, TypeScript
 - **Infrastructure**: Pulumi (TypeScript)
 - **Containerization**: Docker
-- **Authentication**: JWT with bcrypt
 
 ---
 
@@ -78,6 +74,12 @@ infra0/
    
    Create `.env.development` files in the respective directories:
 
+   **visualizer/server/.env**
+   ```env
+   # Database
+   NODE_ENV=development
+   ```
+
    **visualizer/server/.env.development**
    ```env
    # Database
@@ -92,7 +94,11 @@ infra0/
    
    # Server
    PORT=8000
-   NODE_ENV=development
+   ```
+
+**visualizer/ui/.env.local**
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:4000/api
    ```
 
    **cli/.env.development**
@@ -115,7 +121,7 @@ infra0/
 
 5. **Access the application**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
+   - Backend API: http://localhost:4000
 
 ---
 
@@ -144,29 +150,13 @@ infra0/
 1. **Initialize a new project**
    ```bash
    cd cli
-   pnpm dev init
+   pnpm dev init -p project_path
    ```
 
 2. **Render the visualizer**
    ```bash
    pnpm dev render
    ```
-
-### Example Infrastructure Generation
-
-**Input:**
-```
-I need a serverless API with a Lambda function, API Gateway, 
-DynamoDB table, and proper IAM roles for a user management system
-```
-
-**Output:**
-- Complete Pulumi TypeScript code
-- Interactive infrastructure diagram
-- Configurable component properties
-- Deployment-ready structure
-
----
 
 ## 🔧 Development
 
