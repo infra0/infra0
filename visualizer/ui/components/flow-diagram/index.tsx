@@ -95,7 +95,7 @@ export default function FlowDiagram({ nodes, edges, onNodeClick }: FlowDiagramPr
 
   return (
     <div className="w-full h-full bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 rounded-xl border border-gray-700/50 overflow-hidden shadow-2xl backdrop-blur">
-      <FlowControls onLayoutChange={handleLayoutChange} />
+      {/* <FlowControls onLayoutChange={handleLayoutChange} /> */}
       
       <FlowCanvas
         nodes={layoutedNodes}

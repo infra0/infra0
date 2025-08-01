@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useEffect } from "react"
+import { useCallback, useMemo, useEffect, useRef } from "react"
 import ReactFlow, {
   type Node,
   type Edge,
@@ -20,13 +20,18 @@ import type { Infra0Node, Infra0Edge } from "@/types/infrastructure"
 import type { FlowState } from "./types"
 import { convertToFlowNodes, convertToFlowEdges } from "./flow-converters"
 
+// Type for nodes with position (after layout)
+type LayoutedNode = Infra0Node & {
+  position: { x: number; y: number }
+}
+
 // Define custom node types
 const nodeTypes: NodeTypes = {
   infrastructure: InfrastructureNode,
 }
 
 interface FlowCanvasProps {
-  nodes: Infra0Node[]
+  nodes: LayoutedNode[]
   edges: Infra0Edge[]
   flowState: FlowState
   layoutDirection: "TB" | "LR"
@@ -60,23 +65,26 @@ export default function FlowCanvas({
 
   const [reactFlowNodes, setNodes, onNodesChangeHandler] = useNodesState(flowNodes)
   const [reactFlowEdges, setEdges, onEdgesChange] = useEdgesState(flowEdges)
+  
+  const isInitialRender = useRef(true)
+  const lastNodesLength = useRef(0)
+  const lastEdgesLength = useRef(0)
 
   useEffect(() => {
-    setNodes(currentNodes => {
-      const currentPositions = new Map(
-        currentNodes.map(node => [node.id, node.position])
-      )
-      return flowNodes.map(flowNode => {
-        const currentPosition = currentPositions.get(flowNode.id)
-        return {
-          ...flowNode,
-          position: currentPosition || flowNode.position
-        }
-      })
-    })
-  }, [flowNodes, setNodes])
+    const structuralChange = 
+      isInitialRender.current || 
+      flowNodes.length !== lastNodesLength.current ||
+      flowEdges.length !== lastEdgesLength.current
 
+    if (structuralChange) {
+      setNodes(flowNodes)
+      lastNodesLength.current = flowNodes.length
+      lastEdgesLength.current = flowEdges.length
+      isInitialRender.current = false
+    }
+  }, [flowNodes, flowEdges, setNodes])
 
+  // Update edges when they change
   useEffect(() => {
     setEdges(flowEdges)
   }, [flowEdges, setEdges])

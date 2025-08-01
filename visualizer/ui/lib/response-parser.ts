@@ -21,8 +21,8 @@ export class InfrastructureResponseParser {
       end: /```infra0_schema\s*\n?([\s\S]*?)\s*```/
     },
     [ResponseSection.OUTRO]: {
-      start: /```outro\s*\n?([\s\S]*?)$/,
-      end: /```outro\s*\n?([\s\S]*?)\s*```/
+      start: /```conclusion\s*\n?([\s\S]*?)$/,
+      end: /```conclusion\s*\n?([\s\S]*?)\s*```/
     }
   }
 

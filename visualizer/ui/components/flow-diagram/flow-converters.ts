@@ -3,19 +3,20 @@ import { MarkerType } from "reactflow"
 import type { Infra0Node, Infra0Edge } from "@/types/infrastructure"
 import type { FlowState } from "./types"
 import { generateNodeColor, getEdgeColor } from "./node-coloring"
-import { getLayoutedElements } from "./layout-helpers"
+
+type LayoutedNode = Infra0Node & {
+  position: { x: number; y: number }
+}
 
 export const convertToFlowNodes = (
-  infraNodes: Infra0Node[], 
+  infraNodes: LayoutedNode[], 
   infraEdges: Infra0Edge[], 
   flowState: FlowState,
   onNodeClick: (node: Infra0Node) => void,
   onNodeHover: (nodeId: string | null) => void,
   layoutDirection: "TB" | "LR" = "TB"
 ): Node[] => {
-  const { nodes: layoutedNodes } = getLayoutedElements(infraNodes, infraEdges, layoutDirection)
-  
-  return layoutedNodes.map((node, index) => {
+  return infraNodes.map((node, index) => {
     const isConnectedToHovered = flowState.hoveredNodeId && infraEdges.some(
       edge => (edge.from === flowState.hoveredNodeId && edge.to === node.id) || 
                (edge.to === flowState.hoveredNodeId && edge.from === node.id)
