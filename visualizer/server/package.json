@@ -10,6 +10,7 @@
     },
     "dependencies": {
         "@ai-sdk/anthropic": "^1.2.12",
+        "@ai-sdk/google": "^1.2.22",
         "@types/bcrypt": "^6.0.0",
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.0",
