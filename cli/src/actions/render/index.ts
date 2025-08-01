@@ -26,7 +26,8 @@ import {
   seedUser,
   getUserWithToken,
   getConversations,
-} from '../../services/visualizerApi';
+  getVisualizerConversationUrl,
+} from '../../services/visualizer';
 
 export const addRenderAction = (program: Command) => {
   program.action(async () => {
@@ -48,8 +49,8 @@ export const addRenderAction = (program: Command) => {
       };
 
       // --- Docker Compose (commented out for now) ---
-      await dockerComposePull(dockerComposeOptions);
-      await dockerComposeUp(dockerComposeOptions, true);
+      // await dockerComposePull(dockerComposeOptions);
+      // await dockerComposeUp(dockerComposeOptions, true);
       console.log("Infra0 Visualizer is running!");
       console.log("UI: http://localhost:3000");
       console.log("Server: http://localhost:4000");
@@ -121,7 +122,9 @@ export const addRenderAction = (program: Command) => {
           ? await intiateNewConversation(token, projectJSON)
           : selectedConversation.id;
 
-      console.log(conversationToRender);
+      // Redirect user to the visualizer UI
+      const visualizerUrl = getVisualizerConversationUrl(conversationToRender);
+      console.log(`Visualizer running at: ${visualizerUrl}`);
     } catch (error) {
       if (error instanceof Error) {
         console.error(`❌ ${error.message}`);

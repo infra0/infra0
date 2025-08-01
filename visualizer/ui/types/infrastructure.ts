@@ -49,6 +49,7 @@ export enum ResponseSection {
 
 export interface ParsedResponseState {
   sections: InfrastructureResponse
+  activeSection: ResponseSection
 }
 
 export interface WorkflowStep {
@@ -56,4 +57,16 @@ export interface WorkflowStep {
   title: string
   description: string
   status: "pending" | "active" | "completed"
+}
+
+
+export interface File {
+  name: string
+  type: string
+  content: string
+}
+
+export interface UserPrompt {
+  files: File[]
+  prompt: string
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Sparkles, ArrowLeft, Settings, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,132 +10,145 @@ import DiagramState from "@/components/diagram-state"
 import FlowDiagram from "@/components/flow-diagram"
 import FullscreenDiagram from "@/components/fullscreen-diagram"
 import PulumiConfigModal from "@/components/pulumi-config-modal"
-import { type Infra0Node, type Infra0Edge, Infra0EdgeType } from "@/types/infrastructure"
-import type { ChatMessage, ChatSession } from "@/types/chat"
+import { type Infra0Node, type Infra0Edge, Infra0EdgeType, Infra0 } from "@/types/infrastructure"
 import { ChatRole } from "@/types/chat"
-import { generateId } from "@/lib/utils"
+import { getAllMessages } from "@/services/conversation/conversation.service"
+import { useChat } from "@/hooks/use-chat"
+import { useRef } from "react"
 
-// Sample infrastructure state
-const sampleNodes: Infra0Node[] = [
-  { id: "vpc", label: "VPC", type: "network" },
-  { id: "public-subnet", label: "Public Subnet", type: "network" },
-  { id: "private-subnet", label: "Private Subnet", type: "network" },
-  { id: "rds", label: "RDS Database", type: "database" },
-  { id: "ecs", label: "ECS Cluster", type: "compute" },
-  { id: "nat-gateway", label: "NAT Gateway", type: "network" },
-  { id: "load-balancer", label: "Load Balancer", type: "network" },
-  { id: "internet-gateway", label: "Internet Gateway", type: "network" },
-]
 
-const sampleEdges: Infra0Edge[] = [
-  { from: "vpc", to: "public-subnet", type: Infra0EdgeType.ConnectsTo },
-  { from: "vpc", to: "private-subnet", type: Infra0EdgeType.ConnectsTo },
-  { from: "private-subnet", to: "rds", type: Infra0EdgeType.ConnectsTo },
-  { from: "private-subnet", to: "ecs", type: Infra0EdgeType.ConnectsTo },
-  { from: "public-subnet", to: "nat-gateway", type: Infra0EdgeType.ConnectsTo },
-  { from: "ecs", to: "load-balancer", type: Infra0EdgeType.ConnectsTo },
-  { from: "load-balancer", to: "internet-gateway", type: Infra0EdgeType.ConnectsTo },
-]
-
-// Sample sessions (in a real app, this would come from a database or API)
-const sampleSessions: ChatSession[] = [
-  {
-    id: "session-1",
-    title: "AWS VPC with ECS and RDS",
-    messages: [
-      {
-        id: "msg-1",
-        type: ChatRole.USER,
-        content: "Create an AWS VPC with public and private subnets, an RDS database, and an ECS cluster",
-        timestamp: new Date(Date.now() - 86400000),
-      },
-      {
-        id: "msg-2",
-        type: ChatRole.ASSISTANT,
-        content: "I've created an infrastructure with VPC, public/private subnets, RDS, and ECS cluster.",
-        timestamp: new Date(Date.now() - 86300000),
-      },
-    ],
-    nodes: sampleNodes,
-    edges: sampleEdges,
-    createdAt: new Date(Date.now() - 86400000),
-    updatedAt: new Date(Date.now() - 86300000),
-  },
-]
-
-function ProjectPage({ params }: { params: { id: string } }) {
+function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ need_streaming: string }> }) {
   const router = useRouter()
-  const projectId = params.id
+  const resolvedParams = use(params)
+  const projectId = resolvedParams.id
+  const resolvedSearchParams = use(searchParams)
+  const needStreaming = resolvedSearchParams.need_streaming === "true"
 
-  const [nodes, setNodes] = useState<Infra0Node[]>(sampleNodes)
-  const [edges, setEdges] = useState<Infra0Edge[]>(sampleEdges)
+  const { messages, isWorking: isLLMStreaming, reload, append, setMessages, setMessagesToInfra0Map, messagesToInfra0Map, latestMessageIdToRender, setLatestMessageIdToRender } = useChat(projectId)
+
+  const [nodes, setNodes] = useState<Infra0Node[]>([])
+  const [edges, setEdges] = useState<Infra0Edge[]>([])
+  const [resources, setResources] = useState<Record<string, any>>({})
+
+  const [flowDiagram, setFlowDiagram] = useState<Infra0 | null>(null)
+
   const [selectedNode, setSelectedNode] = useState<Infra0Node | null>(null)
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
   const [nodeConfigs, setNodeConfigs] = useState<Record<string, Record<string, any>>>({})
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [projectTitle, setProjectTitle] = useState("Loading project...")
 
-  // Load project data
+  const isWorking = isLLMStreaming || isGenerating;
+
+  const hasInitialStreamingCheckRef = useRef(false)
+
   useEffect(() => {
-    // In a real app, this would be an API call
-    const project = sampleSessions.find((s) => s.id === projectId)
-    if (project) {
-      setNodes(project.nodes.length > 0 ? project.nodes : sampleNodes)
-      setEdges(project.edges.length > 0 ? project.edges : sampleEdges)
-      setMessages(project.messages)
-      setProjectTitle(project.title)
+    if(latestMessageIdToRender) {
+      const infra0 = messagesToInfra0Map[latestMessageIdToRender]
+      if(infra0) {
+        setNodes(infra0.diagram.nodes)
+        setEdges(infra0.diagram.edges)
+        setResources(infra0.resources || {})
+      }
+    }
+  }, [latestMessageIdToRender])
+
+  useEffect(() => {
+    try {   
+      const fetchMessages = async () => {
+        const { data } = await getAllMessages({ conversation_id: projectId })
+        setProjectTitle(data.title)
+
+        const aiMessagesToFeed = data.messages.map((message) => {
+          return {
+            id: message._id,
+            role: message.role,
+            content: message.content,
+            createdAt: new Date(message.createdAt),
+          }
+        })
+
+        setMessages(aiMessagesToFeed)
+
+        data.messages.forEach((message) => {
+          if(message.role === ChatRole.ASSISTANT) {
+            const infra0 = message.infra0
+                      
+          if(infra0) {
+            console.log({infra0})
+            setNodes(infra0.diagram.nodes)
+            setEdges(infra0.diagram.edges)
+            setResources(infra0.resources || {})
+          }
+          }
+        })
+
+
+        const messagesToInfra0Map = data.messages.reduce((acc, message) => {
+          if(message.infra0) {
+            acc[message._id] = message.infra0
+          }
+          return acc
+        }, {} as Record<string, Infra0>)
+
+        setMessagesToInfra0Map(messagesToInfra0Map)
+
+      }
+  
+      fetchMessages()
+    } catch(err) {
+      console.log({ err })
     }
   }, [projectId])
 
-  // Simulate streaming response with workflow
-  const simulateStreamingResponse = useCallback((prompt: string) => {
-    // Add streaming message immediately
-    const streamingMessage: ChatMessage = {
-      id: generateId(),
-      type: ChatRole.ASSISTANT,
-      content: prompt,
-      timestamp: new Date(),
-      isStreaming: true,
+  useEffect(() => {
+    if (hasInitialStreamingCheckRef.current) return
+    
+    const lastMessageRole = messages[messages.length - 1]?.role    
+    if (needStreaming && lastMessageRole === ChatRole.USER) {
+      reload()
+      hasInitialStreamingCheckRef.current = true
+      // remove need_streaming param from search param
+      router.replace(`/project/${projectId}`)
     }
+  }, [messages, needStreaming, reload])
 
-    setMessages((prev) => [...prev, streamingMessage])
-
-    // Complete after workflow finishes
-    setTimeout(() => {
-      setMessages((prev) => {
-        const newMessages = [...prev]
-        const lastMessage = newMessages[newMessages.length - 1]
-        if (lastMessage && lastMessage.isStreaming) {
-          lastMessage.isStreaming = false
-          lastMessage.content =
-            "Infrastructure has been updated successfully! You can see the changes in the diagram and configure individual components."
-        }
-        return newMessages
-      })
-      setIsGenerating(false)
-    }, 6000)
-  }, [])
 
   const handleSendMessage = useCallback(
     (content: string) => {
-      const userMessage: ChatMessage = {
-        id: generateId(),
-        type: ChatRole.USER,
-        content,
-        timestamp: new Date(),
-      }
-
-      setMessages((prev) => [...prev, userMessage])
       setIsGenerating(true)
 
-      // Simulate API call with streaming
-      setTimeout(() => {
-        simulateStreamingResponse(content)
-      }, 500)
+      append({
+        role: ChatRole.USER,
+        content,
+      }, {
+        body: {
+          conversation_id: projectId,
+        },
+      })
+
+     setIsGenerating(false);
     },
-    [simulateStreamingResponse],
+    [append],
   )
+
+  const updateDiagram = (message_id : string) => {
+    const infra0 = messagesToInfra0Map[message_id]
+    if(infra0) {
+      setNodes(infra0.diagram.nodes)
+      setEdges(infra0.diagram.edges)
+      setResources(infra0.resources || {})
+    } else {
+      if(latestMessageIdToRender) { // HACK - remove in future
+        const infra0 = messagesToInfra0Map[latestMessageIdToRender]
+        if(infra0) {
+          setNodes(infra0.diagram.nodes)
+          setEdges(infra0.diagram.edges)
+          setResources(infra0.resources || {})
+        }
+      }
+    }
+  } 
 
   const handleNodeUpdate = (nodeId: string, updatedNode: Infra0Node) => {
     setNodes((prevNodes) => prevNodes.map((node) => (node.id === nodeId ? updatedNode : node)))
@@ -148,19 +161,21 @@ function ProjectPage({ params }: { params: { id: string } }) {
           to: edge.to === nodeId ? updatedNode.id : edge.to,
         })),
       )
-    }
+    } 
   }
 
+  // For DiagramState component - still needed for configuration
   const handleNodeClick = (node: Infra0Node) => {
     setSelectedNode(node)
     setIsConfigModalOpen(true)
   }
 
   const handleConfigSave = (nodeId: string, config: Record<string, any>) => {
-    setNodeConfigs((prev) => ({
-      ...prev,
-      [nodeId]: config,
-    }))
+    // TODO
+    // setNodeConfigs((prev) => ({
+    //   ...prev,
+    //   [nodeId]: config,
+    // }))
   }
 
   const handleCloseConfigModal = () => {
@@ -168,6 +183,7 @@ function ProjectPage({ params }: { params: { id: string } }) {
     setSelectedNode(null)
   }
 
+  // Keep for FullscreenDiagram compatibility
   const handleNodesChange = (updatedNodes: Infra0Node[]) => {
     setNodes(updatedNodes)
   }
@@ -201,7 +217,7 @@ function ProjectPage({ params }: { params: { id: string } }) {
         {/* Left Panel - Full Height Chat */}
         <div className="w-1/2 border-r border-white/[0.08] flex flex-col bg-[#0a0a0a]">
           <div className="flex-1 p-6">
-            <ChatInterface messages={messages} onSendMessage={handleSendMessage} isGenerating={isGenerating} />
+            <ChatInterface updateDiagram={updateDiagram} messages={messages} onSendMessage={handleSendMessage} isGenerating={isWorking} />
           </div>
         </div>
 
@@ -217,14 +233,13 @@ function ProjectPage({ params }: { params: { id: string } }) {
                   <h2 className="text-lg font-semibold text-white/95">Infrastructure Diagram</h2>
                 </div>
                 <p className="text-sm text-white/60">
-                  Interactive flow diagram - drag nodes to reposition, click to configure
+                  Interactive flow diagram - click nodes to select, hover to highlight connections
                 </p>
               </div>
               <FullscreenDiagram
                 nodes={nodes}
                 edges={edges}
                 onNodeClick={handleNodeClick}
-                onNodesChange={handleNodesChange}
               />
             </div>
           </div>
@@ -252,7 +267,6 @@ function ProjectPage({ params }: { params: { id: string } }) {
                   nodes={nodes}
                   edges={edges}
                   onNodeClick={handleNodeClick}
-                  onNodesChange={handleNodesChange}
                 />
               </TabsContent>
               <TabsContent value="state" className="flex-1 p-6 mt-0">
@@ -271,6 +285,7 @@ function ProjectPage({ params }: { params: { id: string } }) {
       {/* Pulumi Config Modal */}
       <PulumiConfigModal
         node={selectedNode}
+        resources={resources}
         isOpen={isConfigModalOpen}
         onClose={handleCloseConfigModal}
         onSave={handleConfigSave}

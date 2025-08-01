@@ -3,7 +3,7 @@
 import type React from "react"
 import type { Message } from "ai"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,58 +11,52 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Plus, Sparkles, ArrowUp, Loader2 } from "lucide-react"
 import ChatHistory from "@/components/chat-history"
 import SimpleInfrastructureResponse from "@/components/simple-infrastructure-response"
-import { ChatRole, ChatSession } from "@/types/chat"
-import { generateId } from "@/lib/utils"
+import { ChatRole } from "@/types/chat"
 import { useChat } from "@/hooks/use-chat"
+import { IConversation } from "@/services/conversation/conversation.service.types"
+import { createConversation, getConversations } from "@/services/conversation/conversation.service"
+import { toast } from "@/components/ui/use-toast"
 
-// Sample sessions
-const sampleSessions: ChatSession[] = [
-  {
-    id: "session-1",
-    title: "AWS VPC with ECS and RDS",
-    messages: [],
-    nodes: [],
-    edges: [],
-    createdAt: new Date(Date.now() - 86400000),
-    updatedAt: new Date(Date.now() - 3600000),
-  },
-  {
-    id: "session-2",
-    title: "GCP Kubernetes Cluster",
-    messages: [],
-    nodes: [],
-    edges: [],
-    createdAt: new Date(Date.now() - 172800000),
-    updatedAt: new Date(Date.now() - 7200000),
-  },
-]
+
 
 function HomePage() {
   const router = useRouter()
-  const [sessions, setSessions] = useState<ChatSession[]>(sampleSessions)
   const [input, setInput] = useState("")
-  const { isWorking : isLLMStreaming, append, messages } = useChat('user-chat-id')
+  const { isWorking : isLLMStreaming, append, messages, setCurrentConversationId, latestMessageIdToRender } = useChat('user-chat-id')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [conversations, setConversations] = useState<IConversation[]>([])
 
-  const isWorking = isSubmitting && isLLMStreaming;
+  const isWorking = isSubmitting || isLLMStreaming;
+
+  useEffect(() => {
+    try {
+      const fetchConversations = async () => {
+        const { data } = await getConversations()
+        setConversations(data.conversations)
+      }
+      fetchConversations()
+    } catch (error) {
+      toast({
+        title: 'Error fetching conversations',
+        description: 'Please try again later',
+        variant: 'destructive',
+      })
+    }
+  }, [])
+
+  useEffect(() => {
+    if(latestMessageIdToRender) {
+      router.push(`/project/${latestMessageIdToRender}`)
+    }
+  },[])
 
   const handleNewSession = useCallback(() => {
-    const sessionId = generateId()
-    const newSession: ChatSession = {
-      id: sessionId,
-      title: "New Infrastructure Project",
-      messages: [],
-      nodes: [],
-      edges: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
-    setSessions((prev) => [newSession, ...prev])
-    router.push(`/project/${sessionId}`)
-  }, [router])
+    // TODO call api and create a new conversation
+    // setSessions((prev) => [newSession, ...prev])
+    // router.push(`/project/${sessionId}`)
+  }, [])
 
   const handleSendMessage = useCallback(async () => {
     if (!input.trim() || isWorking || isSubmitting) return
@@ -72,8 +66,15 @@ function HomePage() {
       role: ChatRole.USER,
       content: input,
     }
-    
-    await append(message)
+
+    const { data } = await createConversation({
+      prompt: input,
+    })
+    setCurrentConversationId(data._id)
+    setConversations((prev) => [data, ...prev])
+
+    append(message)
+
     setInput("")
     setIsSubmitting(false)
   }, [input, isWorking, append])
@@ -93,7 +94,8 @@ function HomePage() {
   )
 
   const handleDeleteSession = useCallback((sessionId: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId))
+    // TODO call api and delete that project
+    // setSessions((prev) => prev.filter((s) => s.id !== sessionId))
   }, [])
 
   return (
@@ -101,8 +103,7 @@ function HomePage() {
       {/* Chat History Sidebar - Full Height */}
       <div className="w-80 h-full">
         <ChatHistory
-          sessions={sessions}
-          currentSessionId={null}
+          sessions={conversations}
           onSelectSession={handleSelectSession}
           onNewSession={handleNewSession}
           onDeleteSession={handleDeleteSession}
@@ -248,7 +249,7 @@ function HomePage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  placeholder="Ask v0 to build..."
+                  placeholder="Ask infrastructure assistant to build..."
                   className="min-h-[60px] max-h-[120px] bg-white/[0.04] border-white/[0.12] text-white/95 placeholder:text-white/40 resize-none focus:border-white/[0.2] focus:ring-1 focus:ring-white/[0.1] rounded-xl text-sm leading-relaxed pr-12"
                   disabled={isWorking}
                 />

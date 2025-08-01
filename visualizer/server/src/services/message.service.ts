@@ -7,11 +7,11 @@ export interface InputMessage {
     role: MessageRole;
     content: string;
     infra0?: Infra0;
-    conversation: ObjectId;
+    conversation: string;
 }
 
-const createMessage = async (conversation: ObjectId, infra0: Infra0) => {
-    const message = await MessageModel.create({ conversation, infra0 });
+const createMessage = async (payload : InputMessage) => {
+    const message = await MessageModel.create(payload);
     return message;
 }
 
@@ -21,4 +21,9 @@ const createMessages = async (messages: InputMessage[]) => {
     return messages;
 }
 
-export { createMessage, createMessages };
+const getMessages = async (conversation_id: string) => {
+    const messages = await MessageModel.find({ conversation: conversation_id });
+    return messages;
+}
+
+export { createMessage, createMessages, getMessages };

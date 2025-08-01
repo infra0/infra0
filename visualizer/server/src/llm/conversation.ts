@@ -1,11 +1,4 @@
 import {
-  streamText,
-  generateText,
-  type CoreMessage,
-  type StreamTextResult,
-} from "ai";
-import { initModel } from "./provider";
-import {
   LLMProvider,
   CLAUDE_MODELS,
   GEMINI_MODELS,
@@ -13,8 +6,19 @@ import {
   Message,
   InitialModelPayload,
 } from "./types";
-import { prompt } from "../../config/prompt";
-
+import {
+  streamText,
+  generateText,
+  type CoreMessage,
+  type StreamTextResult,
+} from "ai";
+import { initModel } from "./provider";
+import * as fs from "fs";
+import * as path from "path";
+const prompt = fs.readFileSync(
+  path.join(__dirname, "../../config/prompt.txt"),
+  "utf8"
+);
 export interface StreamResponseOptions {
   messages: Message[];
   maxSteps?: number;
