@@ -99,7 +99,7 @@ infra0/
    JWT_EXPIRES_IN=7d
 
    # Server
-   PORT=8000
+   PORT=4000
    ```
 
 **visualizer/ui/.env.local**
