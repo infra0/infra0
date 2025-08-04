@@ -50,7 +50,7 @@ Flows
 
 const chatCompletions = asyncHandler(async (req: Request, res: Response) => {
   const { messages, conversation_id } = req.body;
-  const { provider, model } = getPreferredLLMConfig();
+  // const { provider, model } = getPreferredLLMConfig();
 
   try {
     if (conversation_id) {
@@ -64,19 +64,37 @@ const chatCompletions = asyncHandler(async (req: Request, res: Response) => {
       await createMessage(inputMessage);
     }
 
-    const { streamResult } = await conversationHelper.streamAndCollectResponse({
-      messages: messages,
-      chatType: ChatType.CREATE,
-      provider: provider,
-      model: model,
-      maxTokens: 64000,
-    });
+    // Comment out actual API call for now
+    // const { streamResult } = await conversationHelper.streamAndCollectResponse({
+    //   messages: messages,
+    //   chatType: ChatType.CREATE,
+    //   provider: provider,
+    //   model: model,
+    //   maxTokens: 64000,
+    // });
+
+    // Use mock responses based on messages size
+    const mockFilePath = messages.length <= 1 
+      ? `${__dirname}/../constants/mock1.txt` 
+      : `${__dirname}/../constants/mock2.txt`;
+    
+    const mockContent = fs.readFileSync(mockFilePath, 'utf-8');
 
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
-    for await (const chunk of streamResult.textStream) {
+    
+    // Stream mock content in chunks to simulate real streaming
+    const totalDuration = 15000; // 15 seconds in milliseconds
+    const chunkSize = 100; // Characters per chunk
+    const totalChunks = Math.ceil(mockContent.length / chunkSize);
+    const delayPerChunk = totalDuration / totalChunks; // Calculate delay to ensure 15 seconds total
+    
+    for (let i = 0; i < mockContent.length; i += chunkSize) {
+      const chunk = mockContent.slice(i, i + chunkSize);
       res.write(chunk);
+      // Add calculated delay to ensure total streaming time is 15 seconds
+      await new Promise(resolve => setTimeout(resolve, delayPerChunk));
     }
 
     res.end();

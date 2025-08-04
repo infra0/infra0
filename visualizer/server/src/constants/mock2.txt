@@ -1,0 +1,989 @@
+## 🔍 Introduction
+
+```introduction
+I'll add a new CloudWatch metrics Lambda function to your existing data pipeline. This function will be triggered by your Kinesis data stream and publish custom metrics to CloudWatch for monitoring data flow, processing rates, and stream health. This will enhance your observability without affecting the existing data processing flow.
+```
+
+## 📋 Planning
+
+```planning
+- **New Lambda Function**: Create a metrics publishing Lambda triggered by Kinesis stream
+- **CloudWatch Integration**: Publish custom metrics for data volume, processing rates, and stream health
+- **IAM Permissions**: Add CloudWatch metrics publishing permissions to Lambda role
+- **Event Source Mapping**: Configure Kinesis trigger with appropriate batch settings
+- **Metrics Strategy**: Track record counts, data sizes, processing latency, and error rates
+- **Non-intrusive Design**: Separate from existing data processing to avoid interference
+```
+
+## 💻 Pulumi Code
+
+```pulumi_code
+import * as pulumi from "@pulumi/pulumi";
+import * as aws from "@pulumi/aws";
+import * as awsx from "@pulumi/awsx";
+
+// Get configuration
+const config = new pulumi.Config();
+const region = config.get("aws:region") || "us-east-1";
+
+// ========== S3 Bucket for Firehose delivery ==========
+const dataBucket = new aws.s3.Bucket("data-lake-bucket", {
+    bucket: `data-pipeline-lake-${pulumi.getStack()}`,
+    forceDestroy: true,
+    tags: {
+        Name: "Data Lake Bucket",
+        Environment: pulumi.getStack(),
+    },
+});
+
+const dataBucketVersioning = new aws.s3.BucketVersioning("data-bucket-versioning", {
+    bucket: dataBucket.id,
+    versioningConfiguration: {
+        status: "Enabled",
+    },
+});
+
+const dataTable = new aws.dynamodb.Table("processed-data-table", {
+    name: `processed-data-${pulumi.getStack()}`,
+    billingMode: "PAY_PER_REQUEST",
+    hashKey: "id",
+    attributes: [
+        {
+            name: "id",
+            type: "S",
+        },
+    ],
+    ttl: {
+        attributeName: "ttl",
+        enabled: true,
+    },
+    tags: {
+        Name: "Processed Data Table",
+        Environment: pulumi.getStack(),
+    },
+});
+
+// ========== Kinesis Stream ==========
+const dataStream = new aws.kinesis.Stream("data-stream", {
+    name: `data-stream-${pulumi.getStack()}`,
+    shardCount: 1,
+    retentionPeriod: 24,
+    shardLevelMetrics: [
+        "IncomingRecords",
+        "OutgoingRecords",
+    ],
+    tags: {
+        Name: "Data Stream",
+        Environment: pulumi.getStack(),
+    },
+});
+
+// ========== IAM Roles ==========
+
+// Firehose Role
+const firehoseRole = new aws.iam.Role("firehose-role", {
+    assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+            {
+                Action: "sts:AssumeRole",
+                Effect: "Allow",
+                Principal: {
+                    Service: "firehose.amazonaws.com",
+                },
+            },
+        ],
+    }),
+});
+
+const firehosePolicy = new aws.iam.RolePolicy("firehose-policy", {
+    role: firehoseRole.id,
+    policy: pulumi.all([dataBucket.arn, dataStream.arn]).apply(([bucketArn, streamArn]: [string, string]) =>
+        JSON.stringify({
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Effect: "Allow",
+                    Action: [
+                        "s3:AbortMultipartUpload",
+                        "s3:GetBucketLocation",
+                        "s3:GetObject",
+                        "s3:ListBucket",
+                        "s3:ListBucketMultipartUploads",
+                        "s3:PutObject",
+                    ],
+                    Resource: [bucketArn, `${bucketArn}/*`],
+                },
+                {
+                    Effect: "Allow",
+                    Action: [
+                        "kinesis:DescribeStream",
+                        "kinesis:GetShardIterator",
+                        "kinesis:GetRecords",
+                        "kinesis:ListShards",
+                    ],
+                    Resource: streamArn,
+                },
+                {
+                    Effect: "Allow",
+                    Action: [
+                        "logs:PutLogEvents",
+                    ],
+                    Resource: "arn:aws:logs:*",
+                },
+            ],
+        })
+    ),
+});
+
+// Lambda Execution Role (Updated with CloudWatch metrics permissions)
+const lambdaRole = new aws.iam.Role("lambda-execution-role", {
+    assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+            {
+                Action: "sts:AssumeRole",
+                Effect: "Allow",
+                Principal: {
+                    Service: "lambda.amazonaws.com",
+                },
+            },
+        ],
+    }),
+});
+
+const lambdaPolicy = new aws.iam.RolePolicy("lambda-policy", {
+    role: lambdaRole.id,
+    policy: pulumi.all([dataTable.arn, dataStream.arn]).apply(([tableArn, streamArn]: [string, string]) =>
+        JSON.stringify({
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Effect: "Allow",
+                    Action: [
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                    ],
+                    Resource: "arn:aws:logs:*:*:*",
+                },
+                {
+                    Effect: "Allow",
+                    Action: [
+                        "dynamodb:BatchGetItem",
+                        "dynamodb:BatchWriteItem",
+                        "dynamodb:DeleteItem",
+                        "dynamodb:GetItem",
+                        "dynamodb:PutItem",
+                        "dynamodb:Query",
+                        "dynamodb:Scan",
+                        "dynamodb:UpdateItem",
+                    ],
+                    Resource: tableArn,
+                },
+                {
+                    Effect: "Allow",
+                    Action: [
+                        "kinesis:DescribeStream",
+                        "kinesis:GetShardIterator",
+                        "kinesis:GetRecords",
+                        "kinesis:ListShards",
+                        "kinesis:PutRecord",
+                        "kinesis:PutRecords",
+                    ],
+                    Resource: streamArn,
+                },
+                {
+                    Effect: "Allow",
+                    Action: [
+                        "cloudwatch:PutMetricData",
+                    ],
+                    Resource: "*",
+                },
+            ],
+        })
+    ),
+});
+
+// ========== Kinesis Firehose ==========
+const deliveryStream = new aws.kinesis.FirehoseDeliveryStream("data-firehose", {
+    name: `data-firehose-${pulumi.getStack()}`,
+    destination: "s3",
+    s3Configuration: {
+        roleArn: firehoseRole.arn,
+        bucketArn: dataBucket.arn,
+        prefix: "year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/hour=!{timestamp:HH}/",
+        errorOutputPrefix: "errors/",
+        bufferingSize: 5,
+        bufferingInterval: 300,
+        compressionFormat: "GZIP",
+    },
+    tags: {
+        Name: "Data Firehose",
+        Environment: pulumi.getStack(),
+    },
+});
+
+// ========== Lambda Functions ==========
+
+// API Lambda
+const apiLambda = new aws.lambda.Function("api-lambda", {
+    name: `api-lambda-${pulumi.getStack()}`,
+    code: new pulumi.asset.FileArchive("./lambda"),
+    handler: "api-lambda.handler",
+    runtime: "nodejs18.x",
+    role: lambdaRole.arn,
+    timeout: 30,
+    environment: {
+        variables: {
+            DYNAMODB_TABLE_NAME: dataTable.name,
+        },
+    },
+    tags: {
+        Name: "API Lambda",
+        Environment: pulumi.getStack(),
+    },
+});
+
+// Streaming Lambda
+const streamingLambda = new aws.lambda.Function("streaming-lambda", {
+    name: `streaming-lambda-${pulumi.getStack()}`,
+    code: new pulumi.asset.FileArchive("./lambda"),
+    handler: "streaming-lambda.handler",
+    runtime: "nodejs18.x",
+    role: lambdaRole.arn,
+    timeout: 300,
+    environment: {
+        variables: {
+            DYNAMODB_TABLE_NAME: dataTable.name,
+        },
+    },
+    tags: {
+        Name: "Streaming Lambda",
+        Environment: pulumi.getStack(),
+    },
+});
+
+// Kinesis Ingest Lambda
+const kinesisIngestLambda = new aws.lambda.Function("kinesis-ingest-lambda", {
+    name: `kinesis-ingest-lambda-${pulumi.getStack()}`,
+    code: new pulumi.asset.FileArchive("./lambda"),
+    handler: "kinesis-ingest-lambda.handler",
+    runtime: "nodejs18.x",
+    role: lambdaRole.arn,
+    timeout: 30,
+    environment: {
+        variables: {
+            KINESIS_STREAM_NAME: dataStream.name,
+        },
+    },
+    tags: {
+        Name: "Kinesis Ingest Lambda",
+        Environment: pulumi.getStack(),
+    },
+});
+
+// NEW: CloudWatch Metrics Lambda
+const metricsLambda = new aws.lambda.Function("metrics-lambda", {
+    name: `metrics-lambda-${pulumi.getStack()}`,
+    code: new pulumi.asset.FileArchive("./lambda"),
+    handler: "metrics-lambda.handler",
+    runtime: "nodejs18.x",
+    role: lambdaRole.arn,
+    timeout: 60,
+    environment: {
+        variables: {
+            KINESIS_STREAM_NAME: dataStream.name,
+            ENVIRONMENT: pulumi.getStack(),
+        },
+    },
+    tags: {
+        Name: "CloudWatch Metrics Lambda",
+        Environment: pulumi.getStack(),
+    },
+});
+
+// ========== Event Source Mappings ==========
+
+// Kinesis to Streaming Lambda
+const kinesisEventSourceMapping = new aws.lambda.EventSourceMapping("kinesis-lambda-mapping", {
+    eventSourceArn: dataStream.arn,
+    functionName: streamingLambda.arn,
+    startingPosition: "LATEST",
+    batchSize: 100,
+    maximumBatchingWindowInSeconds: 5,
+});
+
+// NEW: Kinesis to Metrics Lambda
+const metricsEventSourceMapping = new aws.lambda.EventSourceMapping("metrics-lambda-mapping", {
+    eventSourceArn: dataStream.arn,
+    functionName: metricsLambda.arn,
+    startingPosition: "LATEST",
+    batchSize: 50,
+    maximumBatchingWindowInSeconds: 10,
+    parallelizationFactor: 1,
+});
+
+// ========== API Gateway ==========
+const api = new awsx.apigateway.API("data-pipeline-api", {
+    routes: [
+        {
+            path: "/api/data",
+            method: "GET",
+            eventHandler: apiLambda,
+        },
+        {
+            path: "/api/data/{id}",
+            method: "GET", 
+            eventHandler: apiLambda,
+        },
+        {
+            path: "/api/ingest/stream",
+            method: "POST",
+            eventHandler: kinesisIngestLambda,
+        },
+    ],
+});
+
+// ========== Outputs ==========
+export const apiUrl = api.url;
+export const kinesisStreamName = dataStream.name;
+export const firehoseDeliveryStreamName = deliveryStream.name;
+export const s3BucketName = dataBucket.id;
+export const dynamoTableName = dataTable.name;
+export const apiLambdaArn = apiLambda.arn;
+export const streamingLambdaArn = streamingLambda.arn;
+export const kinesisIngestLambdaArn = kinesisIngestLambda.arn;
+export const metricsLambdaArn = metricsLambda.arn; // NEW output
+```
+
+**New Lambda Function Code** (create `./lambda/metrics-lambda.js`):
+
+```javascript
+const AWS = require('aws-sdk');
+const cloudwatch = new AWS.CloudWatch();
+
+exports.handler = async (event) => {
+    console.log('Received Kinesis event for metrics:', JSON.stringify(event, null, 2));
+    
+    const streamName = process.env.KINESIS_STREAM_NAME;
+    const environment = process.env.ENVIRONMENT || 'dev';
+    
+    try {
+        const metrics = [];
+        const timestamp = new Date();
+        
+        // Calculate metrics from the batch
+        let totalRecords = 0;
+        let totalDataSize = 0;
+        let recordsByPartition = {};
+        let processingLatencies = [];
+        
+        for (const record of event.Records) {
+            totalRecords++;
+            
+            // Calculate data size
+            const dataSize = Buffer.from(record.kinesis.data, 'base64').length;
+            totalDataSize += dataSize;
+            
+            // Track records by partition
+            const partitionKey = record.kinesis.partitionKey;
+            recordsByPartition[partitionKey] = (recordsByPartition[partitionKey] || 0) + 1;
+            
+            // Calculate processing latency (time from Kinesis arrival to Lambda processing)
+            const arrivalTime = new Date(record.kinesis.approximateArrivalTimestamp * 1000);
+            const processingLatency = timestamp.getTime() - arrivalTime.getTime();
+            processingLatencies.push(processingLatency);
+            
+            try {
+                // Parse record data for additional metrics
+                const payload = Buffer.from(record.kinesis.data, 'base64').toString('utf-8');
+                const data = JSON.parse(payload);
+                
+                // Example: Track specific data types or sources
+                if (data.source) {
+                    metrics.push({
+                        MetricName: 'RecordsBySource',
+                        Dimensions: [
+                            {
+                                Name: 'Source',
+                                Value: data.source
+                            },
+                            {
+                                Name: 'Environment',
+                                Value: environment
+                            }
+                        ],
+                        Unit: 'Count',
+                        Value: 1,
+                        Timestamp: timestamp
+                    });
+                }
+                
+            } catch (parseError) {
+                console.warn('Could not parse record data for additional metrics:', parseError);
+            }
+        }
+        
+        // Core metrics
+        metrics.push(
+            {
+                MetricName: 'RecordsProcessed',
+                Dimensions: [
+                    {
+                        Name: 'StreamName',
+                        Value: streamName
+                    },
+                    {
+                        Name: 'Environment',
+                        Value: environment
+                    }
+                ],
+                Unit: 'Count',
+                Value: totalRecords,
+                Timestamp: timestamp
+            },
+            {
+                MetricName: 'DataSizeBytes',
+                Dimensions: [
+                    {
+                        Name: 'StreamName',
+                        Value: streamName
+                    },
+                    {
+                        Name: 'Environment',
+                        Value: environment
+                    }
+                ],
+                Unit: 'Bytes',
+                Value: totalDataSize,
+                Timestamp: timestamp
+            },
+            {
+                MetricName: 'UniquePartitions',
+                Dimensions: [
+                    {
+                        Name: 'StreamName',
+                        Value: streamName
+                    },
+                    {
+                        Name: 'Environment',
+                        Value: environment
+                    }
+                ],
+                Unit: 'Count',
+                Value: Object.keys(recordsByPartition).length,
+                Timestamp: timestamp
+            }
+        );
+        
+        // Processing latency metrics
+        if (processingLatencies.length > 0) {
+            const avgLatency = processingLatencies.reduce((a, b) => a + b, 0) / processingLatencies.length;
+            const maxLatency = Math.max(...processingLatencies);
+            const minLatency = Math.min(...processingLatencies);
+            
+            metrics.push(
+                {
+                    MetricName: 'ProcessingLatencyAvg',
+                    Dimensions: [
+                        {
+                            Name: 'StreamName',
+                            Value: streamName
+                        },
+                        {
+                            Name: 'Environment',
+                            Value: environment
+                        }
+                    ],
+                    Unit: 'Milliseconds',
+                    Value: avgLatency,
+                    Timestamp: timestamp
+                },
+                {
+                    MetricName: 'ProcessingLatencyMax',
+                    Dimensions: [
+                        {
+                            Name: 'StreamName',
+                            Value: streamName
+                        },
+                        {
+                            Name: 'Environment',
+                            Value: environment
+                        }
+                    ],
+                    Unit: 'Milliseconds',
+                    Value: maxLatency,
+                    Timestamp: timestamp
+                },
+                {
+                    MetricName: 'ProcessingLatencyMin',
+                    Dimensions: [
+                        {
+                            Name: 'StreamName',
+                            Value: streamName
+                        },
+                        {
+                            Name: 'Environment',
+                            Value: environment
+                        }
+                    ],
+                    Unit: 'Milliseconds',
+                    Value: minLatency,
+                    Timestamp: timestamp
+                }
+            );
+        }
+        
+        // Publish metrics in batches (CloudWatch limit is 20 metrics per call)
+        const batchSize = 20;
+        for (let i = 0; i < metrics.length; i += batchSize) {
+            const batch = metrics.slice(i, i + batchSize);
+            
+            const params = {
+                Namespace: 'DataPipeline/Kinesis',
+                MetricData: batch
+            };
+            
+            await cloudwatch.putMetricData(params).promise();
+            console.log(`Published ${batch.length} metrics to CloudWatch`);
+        }
+        
+        console.log(`Successfully published ${metrics.length} metrics for ${totalRecords} records`);
+        
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                metricsPublished: metrics.length,
+                recordsProcessed: totalRecords,
+                totalDataSize: totalDataSize,
+                uniquePartitions: Object.keys(recordsByPartition).length
+            })
+        };
+        
+    } catch (error) {
+        console.error('Error publishing metrics to CloudWatch:', error);
+        throw error; // Let Lambda retry failed records
+    }
+};
+```
+
+## 📊 Infra0 Schema
+
+```infra0_schema
+{
+  "resources": {
+    "dataBucket": {
+      "type": "aws:s3:Bucket",
+      "config": {
+        "bucket": "data-pipeline-lake-${stack}",
+        "forceDestroy": true,
+        "tags": {
+          "Name": "Data Lake Bucket",
+          "Environment": "${stack}"
+        }
+      }
+    },
+    "dataBucketVersioning": {
+      "type": "aws:s3:BucketVersioning",
+      "config": {
+        "bucket": "dataBucket",
+        "versioningConfiguration": {
+          "status": "Enabled"
+        }
+      },
+      "dependsOn": ["dataBucket"]
+    },
+    "dataTable": {
+      "type": "aws:dynamodb:Table",
+      "config": {
+        "name": "processed-data-${stack}",
+        "billingMode": "PAY_PER_REQUEST",
+        "hashKey": "id",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "S"
+          }
+        ],
+        "ttl": {
+          "attributeName": "ttl",
+          "enabled": true
+        },
+        "tags": {
+          "Name": "Processed Data Table",
+          "Environment": "${stack}"
+        }
+      }
+    },
+    "dataStream": {
+      "type": "aws:kinesis:Stream",
+      "config": {
+        "name": "data-stream-${stack}",
+        "shardCount": 1,
+        "retentionPeriod": 24,
+        "shardLevelMetrics": [
+          "IncomingRecords",
+          "OutgoingRecords"
+        ],
+        "tags": {
+          "Name": "Data Stream",
+          "Environment": "${stack}"
+        }
+      }
+    },
+    "firehoseRole": {
+      "type": "aws:iam:Role",
+      "config": {
+        "assumeRolePolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "firehosePolicy": {
+      "type": "aws:iam:RolePolicy",
+      "config": {
+        "role": "firehoseRole",
+        "policy": "S3 and Kinesis permissions for Firehose"
+      },
+      "dependsOn": ["firehoseRole", "dataBucket", "dataStream"]
+    },
+    "lambdaRole": {
+      "type": "aws:iam:Role",
+      "config": {
+        "assumeRolePolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "lambdaPolicy": {
+      "type": "aws:iam:RolePolicy",
+      "config": {
+        "role": "lambdaRole",
+        "policy": "DynamoDB, Kinesis, and CloudWatch permissions for Lambda"
+      },
+      "dependsOn": ["lambdaRole", "dataTable", "dataStream"]
+    },
+    "deliveryStream": {
+      "type": "aws:kinesis:FirehoseDeliveryStream",
+      "config": {
+        "name": "data-firehose-${stack}",
+        "destination": "s3",
+        "s3Configuration": {
+          "roleArn": "firehoseRole.arn",
+          "bucketArn": "dataBucket.arn",
+          "prefix": "year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/hour=!{timestamp:HH}/",
+          "errorOutputPrefix": "errors/",
+          "bufferingSize": 5,
+          "bufferingInterval": 300,
+          "compressionFormat": "GZIP"
+        },
+        "tags": {
+          "Name": "Data Firehose",
+          "Environment": "${stack}"
+        }
+      },
+      "dependsOn": ["firehoseRole", "dataBucket"]
+    },
+    "apiLambda": {
+      "type": "aws:lambda:Function",
+      "config": {
+        "name": "api-lambda-${stack}",
+        "code": "./lambda",
+        "handler": "api-lambda.handler",
+        "runtime": "nodejs18.x",
+        "role": "lambdaRole.arn",
+        "timeout": 30,
+        "environment": {
+          "variables": {
+            "DYNAMODB_TABLE_NAME": "dataTable.name"
+          }
+        },
+        "tags": {
+          "Name": "API Lambda",
+          "Environment": "${stack}"
+        }
+      },
+      "dependsOn": ["lambdaRole", "dataTable"]
+    },
+    "streamingLambda": {
+      "type": "aws:lambda:Function",
+      "config": {
+        "name": "streaming-lambda-${stack}",
+        "code": "./lambda",
+        "handler": "streaming-lambda.handler",
+        "runtime": "nodejs18.x",
+        "role": "lambdaRole.arn",
+        "timeout": 300,
+        "environment": {
+          "variables": {
+            "DYNAMODB_TABLE_NAME": "dataTable.name"
+          }
+        },
+        "tags": {
+          "Name": "Streaming Lambda",
+          "Environment": "${stack}"
+        }
+      },
+      "dependsOn": ["lambdaRole", "dataTable"]
+    },
+    "kinesisIngestLambda": {
+      "type": "aws:lambda:Function",
+      "config": {
+        "name": "kinesis-ingest-lambda-${stack}",
+        "code": "./lambda",
+        "handler": "kinesis-ingest-lambda.handler",
+        "runtime": "nodejs18.x",
+        "role": "lambdaRole.arn",
+        "timeout": 30,
+        "environment": {
+          "variables": {
+            "KINESIS_STREAM_NAME": "dataStream.name"
+          }
+        },
+        "tags": {
+          "Name": "Kinesis Ingest Lambda",
+          "Environment": "${stack}"
+        }
+      },
+      "dependsOn": ["lambdaRole", "dataStream"]
+    },
+    "metricsLambda": {
+      "type": "aws:lambda:Function",
+      "config": {
+        "name": "metrics-lambda-${stack}",
+        "code": "./lambda",
+        "handler": "metrics-lambda.handler",
+        "runtime": "nodejs18.x",
+        "role": "lambdaRole.arn",
+        "timeout": 60,
+        "environment": {
+          "variables": {
+            "KINESIS_STREAM_NAME": "dataStream.name",
+            "ENVIRONMENT": "${stack}"
+          }
+        },
+        "tags": {
+          "Name": "CloudWatch Metrics Lambda",
+          "Environment": "${stack}"
+        }
+      },
+      "dependsOn": ["lambdaRole", "dataStream"]
+    },
+    "kinesisEventSourceMapping": {
+      "type": "aws:lambda:EventSourceMapping",
+      "config": {
+        "eventSourceArn": "dataStream.arn",
+        "functionName": "streamingLambda.arn",
+        "startingPosition": "LATEST",
+        "batchSize": 100,
+        "maximumBatchingWindowInSeconds": 5
+      },
+      "dependsOn": ["dataStream", "streamingLambda"]
+    },
+    "metricsEventSourceMapping": {
+      "type": "aws:lambda:EventSourceMapping",
+      "config": {
+        "eventSourceArn": "dataStream.arn",
+        "functionName": "metricsLambda.arn",
+        "startingPosition": "LATEST",
+        "batchSize": 50,
+        "maximumBatchingWindowInSeconds": 10,
+        "parallelizationFactor": 1
+      },
+      "dependsOn": ["dataStream", "metricsLambda"]
+    },
+    "apiGateway": {
+      "type": "awsx:apigateway:API",
+      "config": {
+        "routes": [
+          {
+            "path": "/api/data",
+            "method": "GET",
+            "eventHandler": "apiLambda"
+          },
+          {
+            "path": "/api/data/{id}",
+            "method": "GET",
+            "eventHandler": "apiLambda"
+          },
+          {
+            "path": "/api/ingest/stream",
+            "method": "POST",
+            "eventHandler": "kinesisIngestLambda"
+          }
+        ]
+      },
+      "dependsOn": ["apiLambda", "kinesisIngestLambda"]
+    },
+    "cloudWatch": {
+      "type": "aws:cloudwatch:Dashboard",
+      "config": {
+        "dashboardName": "DataPipelineMetrics-${stack}",
+        "dashboardBody": "CloudWatch dashboard for data pipeline metrics"
+      }
+    }
+  },
+  "diagram": {
+    "nodes": [
+      {
+        "id": "apiGateway",
+        "label": "Data Pipeline API",
+        "group": "integration"
+      },
+      {
+        "id": "apiLambda",
+        "label": "API Lambda",
+        "group": "compute"
+      },
+      {
+        "id": "kinesisIngestLambda",
+        "label": "Kinesis Ingest Lambda",
+        "group": "compute"
+      },
+      {
+        "id": "dataStream",
+        "label": "Data Stream",
+        "group": "integration"
+      },
+      {
+        "id": "streamingLambda",
+        "label": "Streaming Lambda",
+        "group": "compute"
+      },
+      {
+        "id": "metricsLambda",
+        "label": "Metrics Lambda",
+        "group": "compute"
+      },
+      {
+        "id": "dataTable",
+        "label": "Processed Data Table",
+        "group": "storage"
+      },
+      {
+        "id": "deliveryStream",
+        "label": "Data Firehose",
+        "group": "integration"
+      },
+      {
+        "id": "dataBucket",
+        "label": "Data Lake Bucket",
+        "group": "storage"
+      },
+      {
+        "id": "cloudWatch",
+        "label": "CloudWatch Metrics",
+        "group": "monitoring"
+      },
+      {
+        "id": "lambdaRole",
+        "label": "Lambda Execution Role",
+        "group": "security"
+      },
+      {
+        "id": "firehoseRole",
+        "label": "Firehose Service Role",
+        "group": "security"
+      }
+    ],
+    "edges": [
+      {
+        "from": "apiGateway",
+        "to": "apiLambda",
+        "type": "connectsTo"
+      },
+      {
+        "from": "apiGateway",
+        "to": "kinesisIngestLambda",
+        "type": "connectsTo"
+      },
+      {
+        "from": "apiLambda",
+        "to": "dataTable",
+        "type": "connectsTo"
+      },
+      {
+        "from": "kinesisIngestLambda",
+        "to": "dataStream",
+        "type": "connectsTo"
+      },
+      {
+        "from": "dataStream",
+        "to": "streamingLambda",
+        "type": "connectsTo"
+      },
+      {
+        "from": "dataStream",
+        "to": "metricsLambda",
+        "type": "connectsTo"
+      },
+      {
+        "from": "streamingLambda",
+        "to": "dataTable",
+        "type": "connectsTo"
+      },
+      {
+        "from": "metricsLambda",
+        "to": "cloudWatch",
+        "type": "connectsTo"
+      },
+      {
+        "from": "dataStream",
+        "to": "deliveryStream",
+        "type": "connectsTo"
+      },
+      {
+        "from": "deliveryStream",
+        "to": "dataBucket",
+        "type": "connectsTo"
+      }
+    ]
+  }
+}
+```
+
+## 🎯 Conclusion
+
+```conclusion
+I've successfully added a CloudWatch metrics Lambda function to your data pipeline that will provide comprehensive monitoring capabilities. The new function publishes custom metrics including:
+
+**Key Metrics Published:**
+- RecordsProcessed: Count of records processed per batch
+- DataSizeBytes: Total data volume processed
+- UniquePartitions: Number of unique partition keys
+- ProcessingLatency: Min/Max/Average processing delays
+- RecordsBySource: Breakdown by data source (if available)
+
+**Features Added:**
+- Separate event source mapping with optimized batch settings
+- CloudWatch permissions added to existing Lambda role
+- Comprehensive error handling and retry logic
+- Metrics published to "DataPipeline/Kinesis" namespace
+
+**Deployment:** Run `pulumi up` to deploy the new metrics Lambda. After deployment, check CloudWatch Metrics console under "DataPipeline/Kinesis" namespace to view your custom metrics.
+
+**Next Steps:**
+- Create CloudWatch alarms based on these metrics
+- Build a CloudWatch dashboard for real-time monitoring
+- Set up SNS notifications for critical thresholds
+- Consider adding more business-specific metrics based on your data patterns
+```

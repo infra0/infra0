@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
-import { Sparkles, ArrowLeft, Settings, Eye } from "lucide-react"
+import { Sparkles, ArrowLeft, Settings, Eye, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ChatInterface from "@/components/chat-interface"
@@ -37,6 +37,7 @@ function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>
   const [nodeConfigs, setNodeConfigs] = useState<Record<string, Record<string, any>>>({})
   const [isGenerating, setIsGenerating] = useState(false)
   const [projectTitle, setProjectTitle] = useState("Loading project...")
+  const [isDeploying, setIsDeploying] = useState(false)
 
   const isWorking = isLLMStreaming || isGenerating;
 
@@ -183,6 +184,32 @@ function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>
     setSelectedNode(null)
   }
 
+  const handleDeploy = async () => {
+    if (nodes.length === 0) {
+      // You could add a toast notification here
+      console.log("No infrastructure to deploy")
+      return
+    }
+
+    setIsDeploying(true)
+    try {
+      // TODO: Implement actual deployment logic
+      // This would typically call your backend API to deploy the infrastructure
+      console.log("Deploying infrastructure:", { nodes, edges, resources })
+      
+      // Simulate deployment time
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // You could add success notification here
+      console.log("Deployment successful!")
+    } catch (error) {
+      console.error("Deployment failed:", error)
+      // You could add error notification here
+    } finally {
+      setIsDeploying(false)
+    }
+  }
+
   // Keep for FullscreenDiagram compatibility
   const handleNodesChange = (updatedNodes: Infra0Node[]) => {
     setNodes(updatedNodes)
@@ -209,6 +236,40 @@ function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>
               <h1 className="text-lg font-semibold text-white/95">{projectTitle}</h1>
               <p className="text-sm text-white/50 mt-0.5">Project ID: {projectId}</p>
             </div>
+          </div>
+          
+          {/* Deploy Button */}
+          <div className="flex items-center gap-3">
+            <div className="text-right mr-4">
+              <p className="text-sm text-white/60">Infrastructure Status</p>
+              <p className="text-xs text-white/40">
+                {nodes.length > 0 ? `${nodes.length} resources ready` : "No infrastructure defined"}
+              </p>
+            </div>
+            <Button
+              onClick={handleDeploy}
+              disabled={isDeploying || nodes.length === 0}
+              className={`
+                relative overflow-hidden px-6 py-2.5 rounded-lg font-medium transition-all duration-300
+                ${nodes.length > 0 
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-lg hover:shadow-emerald-500/25 hover:scale-105' 
+                  : 'bg-white/[0.08] text-white/40 cursor-not-allowed'
+                }
+                ${isDeploying ? 'animate-pulse' : ''}
+              `}
+            >
+              {isDeploying ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Deploying...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Deploy Infrastructure
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
