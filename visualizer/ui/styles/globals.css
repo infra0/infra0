@@ -92,3 +92,44 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Demo-specific animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* Demo pulse animation for the start button */
+@keyframes demo-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+}
+
+.demo-pulse {
+  animation: demo-pulse 2s infinite;
+}
+
+/* Enhanced arrow styles for demo diagrams */
+.demo-diagram .react-flow__edge-path {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.4));
+}
+
+.demo-diagram .react-flow__arrowhead {
+  fill: #60a5fa;
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.6));
+}

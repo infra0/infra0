@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Plus, Sparkles, ArrowUp, Loader2 } from "lucide-react"
+import { Plus, Sparkles, ArrowUp, Loader2, Play } from "lucide-react"
 import ChatHistory from "@/components/chat-history"
 import SimpleInfrastructureResponse from "@/components/simple-infrastructure-response"
 import { ChatRole } from "@/types/chat"
@@ -116,14 +116,24 @@ function HomePage() {
       <div className="flex-1 flex flex-col h-full">
         {/* Header */}
         <div className="border-b border-white/[0.08] px-8 py-6 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-black" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-white/95">Cursor for Infrastructure</h1>
+                <p className="text-sm text-white/60">Generate Pulumi infrastructure code with AI</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold text-white/95">Cursor for Infrastructure</h1>
-              <p className="text-sm text-white/60">Generate Pulumi infrastructure code with AI</p>
-            </div>
+            <Button
+              onClick={() => router.push("/demo")}
+              variant="outline"
+              className="border-white/[0.2] text-white/90 hover:bg-white/[0.1] hover:text-white"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              View Demo
+            </Button>
           </div>
         </div>
 
