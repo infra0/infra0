@@ -2,20 +2,18 @@
 
 import { useState, useCallback, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
-import { Sparkles, ArrowLeft, Settings, Eye } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import ChatInterface from "@/components/chat-interface"
-import DiagramState from "@/components/diagram-state"
-import FlowDiagram from "@/components/flow-diagram"
-import FullscreenDiagram from "@/components/fullscreen-diagram"
-import PulumiConfigModal from "@/components/pulumi-config-modal"
-import { type Infra0Node, type Infra0Edge, Infra0EdgeType, Infra0 } from "@/types/infrastructure"
+import { type Infra0Node, type Infra0Edge, Infra0 } from "@/types/infrastructure"
 import { ChatRole } from "@/types/chat"
 import { getAllMessages } from "@/services/conversation/conversation.service"
 import { useChat } from "@/hooks/use-chat"
 import { useRef } from "react"
 
+// Import reusable components
+import { MainLayout } from "@/components/layout"
+import { ProjectHeader } from "@/components/header"
+import { ChatPanel } from "@/components/chat"
+import { DiagramPanel } from "@/components/diagram"
+import PulumiConfigModal from "@/components/pulumi-config-modal"
 
 function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ need_streaming: string }> }) {
   const router = useRouter()
@@ -189,97 +187,31 @@ function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>
   }
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-white flex flex-col overflow-hidden">
+    <MainLayout className="flex flex-col">
       {/* Header */}
-      <div className="border-b border-white/[0.08] bg-[#0a0a0a] px-8 py-5 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => router.push("/")}
-              variant="ghost"
-              className="text-white/60 hover:text-white/90 hover:bg-white/[0.04] -ml-2"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-black" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-white/95">{projectTitle}</h1>
-              <p className="text-sm text-white/50 mt-0.5">Project ID: {projectId}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ProjectHeader
+        projectTitle={projectTitle}
+        projectId={projectId}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel - Full Height Chat */}
-        <div className="w-1/2 border-r border-white/[0.08] flex flex-col bg-[#0a0a0a]">
-          <div className="flex-1 p-6">
-            <ChatInterface updateDiagram={updateDiagram} messages={messages} onSendMessage={handleSendMessage} isGenerating={isWorking} />
-          </div>
-        </div>
+        <ChatPanel
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          isGenerating={isWorking}
+          updateDiagram={updateDiagram}
+          className="w-1/2"
+        />
 
         {/* Right Panel - Infrastructure Diagram with Tabs */}
-        <div className="w-1/2 flex flex-col bg-[#0a0a0a]">
-          <div className="p-6 border-b border-white/[0.08] flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-black" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-white/95">Infrastructure Diagram</h2>
-                </div>
-                <p className="text-sm text-white/60">
-                  Interactive flow diagram - click nodes to select, hover to highlight connections
-                </p>
-              </div>
-              <FullscreenDiagram
-                nodes={nodes}
-                edges={edges}
-                onNodeClick={handleNodeClick}
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Tabs defaultValue="diagram" className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-2 bg-white/[0.04] border-b border-white/[0.08]">
-                <TabsTrigger
-                  value="diagram"
-                  className="flex items-center gap-2 text-white/70 data-[state=active]:text-white/95"
-                >
-                  <Eye className="w-4 h-4" />
-                  Diagram
-                </TabsTrigger>
-                <TabsTrigger
-                  value="state"
-                  className="flex items-center gap-2 text-white/70 data-[state=active]:text-white/95"
-                >
-                  <Settings className="w-4 h-4" />
-                  State
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="diagram" className="flex-1 p-6 mt-0">
-                <FlowDiagram
-                  nodes={nodes}
-                  edges={edges}
-                  onNodeClick={handleNodeClick}
-                />
-              </TabsContent>
-              <TabsContent value="state" className="flex-1 p-6 mt-0">
-                <DiagramState
-                  nodes={nodes}
-                  edges={edges}
-                  onNodeUpdate={handleNodeUpdate}
-                  onNodeClick={handleNodeClick}
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
+        <DiagramPanel
+          nodes={nodes}
+          edges={edges}
+          onNodeClick={handleNodeClick}
+          onNodeUpdate={handleNodeUpdate}
+          className="w-1/2"
+        />
       </div>
 
       {/* Pulumi Config Modal */}
@@ -290,7 +222,8 @@ function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>
         onClose={handleCloseConfigModal}
         onSave={handleConfigSave}
       />
-    </div>
+    </MainLayout>
   )
 }
+
 export default ProjectPage;

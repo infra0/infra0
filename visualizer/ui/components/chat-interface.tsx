@@ -25,6 +25,9 @@ interface ChatInterfaceProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   isGenerating: boolean;
+  initialInput?: string;
+  readOnly?: boolean;
+  demoMode?: boolean;
 }
 
 export default function ChatInterface({
@@ -32,8 +35,11 @@ export default function ChatInterface({
   messages,
   onSendMessage,
   isGenerating,
+  initialInput = "",
+  readOnly = false,
+  demoMode = false,
 }: ChatInterfaceProps) {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialInput);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -197,16 +203,19 @@ export default function ChatInterface({
             <Textarea
               ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyPress}
+              onChange={readOnly ? undefined : (e) => setInput(e.target.value)}
+              onKeyDown={readOnly ? undefined : handleKeyPress}
               placeholder="Ask infrastructure assistant to build..."
-              className="min-h-[50px] max-h-[100px] bg-white/[0.04] border-white/[0.12] text-white/95 placeholder:text-white/40 resize-none text-sm leading-relaxed focus:border-white/[0.2] focus:ring-1 focus:ring-white/[0.1] rounded-lg pr-12"
-              disabled={isGenerating}
+              className={`min-h-[50px] max-h-[100px] bg-white/[0.04] border-white/[0.12] text-white/95 placeholder:text-white/40 resize-none text-sm leading-relaxed focus:border-white/[0.2] focus:ring-1 focus:ring-white/[0.1] rounded-lg pr-12 ${
+                readOnly ? 'cursor-not-allowed opacity-80' : ''
+              }`}
+              disabled={isGenerating || readOnly}
+              readOnly={readOnly}
             />
             <div className="absolute bottom-2 right-2">
               <Button
                 onClick={handleSend}
-                disabled={!input.trim() || isGenerating}
+                disabled={!input.trim() || isGenerating || readOnly}
                 className="bg-white text-black hover:bg-white/90 disabled:opacity-50 h-8 w-8 p-0 rounded-lg"
               >
                 <ArrowUp className="w-4 h-4" />
@@ -214,6 +223,11 @@ export default function ChatInterface({
             </div>
           </div>
         </div>
+        {demoMode && (
+          <div className="mt-2 text-xs text-white/40 text-center">
+            Demo Mode - Click "Send" to see the follow-up response
+          </div>
+        )}
       </div>
     </div>
   );
