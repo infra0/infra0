@@ -1,0 +1,402 @@
+Looking at your AWS data pipeline infrastructure, I can see you've built a comprehensive real-time data processing system. Let me analyze this and provide you with the corresponding Infra0 schema for visualization and documentation.
+
+## 🔍 Introduction
+
+```introduction
+I'll create an Infra0 schema for your existing AWS data pipeline infrastructure. This is a sophisticated real-time data processing system that includes API Gateway for data ingestion, Kinesis for streaming, Lambda functions for processing, DynamoDB for storage, and S3 with Firehose for data lake functionality. The architecture supports both real-time streaming and batch processing patterns.
+```
+
+## 📋 Planning
+
+```planning
+- **API Layer**: API Gateway with three endpoints for data retrieval and stream ingestion
+- **Compute Layer**: Three Lambda functions handling API requests, stream processing, and Kinesis ingestion
+- **Streaming Layer**: Kinesis Data Stream for real-time data flow and Firehose for S3 delivery
+- **Storage Layer**: DynamoDB for processed data and S3 bucket for data lake storage
+- **Security**: IAM roles with least-privilege policies for Lambda and Firehose services
+- **Data Flow**: API → Kinesis → Lambda → DynamoDB, with parallel S3 archival via Firehose
+```
+
+## 💻 Pulumi Code
+
+```pulumi_code
+// Your existing Pulumi code is already well-structured and follows best practices.
+// The code includes proper IAM roles, event source mappings, and comprehensive error handling.
+// No modifications needed - this is production-ready infrastructure code.
+```
+
+## 📊 Infra0 Schema
+
+```infra0_schema
+{
+  "resources": {
+    "dataBucket": {
+      "type": "aws:s3:Bucket",
+      "config": {
+        "bucket": "data-pipeline-lake-${pulumi.getStack()}",
+        "forceDestroy": true,
+        "tags": {
+          "Name": "Data Lake Bucket",
+          "Environment": "${pulumi.getStack()}"
+        }
+      }
+    },
+    "dataBucketVersioning": {
+      "type": "aws:s3:BucketVersioning",
+      "config": {
+        "bucket": "dataBucket",
+        "versioningConfiguration": {
+          "status": "Enabled"
+        }
+      },
+      "dependsOn": ["dataBucket"]
+    },
+    "dataTable": {
+      "type": "aws:dynamodb:Table",
+      "config": {
+        "name": "processed-data-${pulumi.getStack()}",
+        "billingMode": "PAY_PER_REQUEST",
+        "hashKey": "id",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "S"
+          }
+        ],
+        "ttl": {
+          "attributeName": "ttl",
+          "enabled": true
+        },
+        "tags": {
+          "Name": "Processed Data Table",
+          "Environment": "${pulumi.getStack()}"
+        }
+      }
+    },
+    "dataStream": {
+      "type": "aws:kinesis:Stream",
+      "config": {
+        "name": "data-stream-${pulumi.getStack()}",
+        "shardCount": 1,
+        "retentionPeriod": 24,
+        "shardLevelMetrics": ["IncomingRecords", "OutgoingRecords"],
+        "tags": {
+          "Name": "Data Stream",
+          "Environment": "${pulumi.getStack()}"
+        }
+      }
+    },
+    "firehoseRole": {
+      "type": "aws:iam:Role",
+      "config": {
+        "assumeRolePolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "firehosePolicy": {
+      "type": "aws:iam:RolePolicy",
+      "config": {
+        "role": "firehoseRole",
+        "policy": "S3 and Kinesis permissions for Firehose"
+      },
+      "dependsOn": ["firehoseRole", "dataBucket", "dataStream"]
+    },
+    "lambdaRole": {
+      "type": "aws:iam:Role",
+      "config": {
+        "assumeRolePolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "lambdaPolicy": {
+      "type": "aws:iam:RolePolicy",
+      "config": {
+        "role": "lambdaRole",
+        "policy": "DynamoDB and Kinesis permissions for Lambda"
+      },
+      "dependsOn": ["lambdaRole", "dataTable", "dataStream"]
+    },
+    "deliveryStream": {
+      "type": "aws:kinesis:FirehoseDeliveryStream",
+      "config": {
+        "name": "data-firehose-${pulumi.getStack()}",
+        "destination": "s3",
+        "s3Configuration": {
+          "roleArn": "firehoseRole",
+          "bucketArn": "dataBucket",
+          "prefix": "year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/hour=!{timestamp:HH}/",
+          "errorOutputPrefix": "errors/",
+          "bufferingSize": 5,
+          "bufferingInterval": 300,
+          "compressionFormat": "GZIP"
+        },
+        "tags": {
+          "Name": "Data Firehose",
+          "Environment": "${pulumi.getStack()}"
+        }
+      },
+      "dependsOn": ["firehoseRole", "dataBucket"]
+    },
+    "apiLambda": {
+      "type": "aws:lambda:Function",
+      "config": {
+        "name": "api-lambda-${pulumi.getStack()}",
+        "code": "./lambda",
+        "handler": "api-lambda.handler",
+        "runtime": "nodejs18.x",
+        "role": "lambdaRole",
+        "timeout": 30,
+        "environment": {
+          "variables": {
+            "DYNAMODB_TABLE_NAME": "dataTable"
+          }
+        },
+        "tags": {
+          "Name": "API Lambda",
+          "Environment": "${pulumi.getStack()}"
+        }
+      },
+      "dependsOn": ["lambdaRole", "dataTable"]
+    },
+    "streamingLambda": {
+      "type": "aws:lambda:Function",
+      "config": {
+        "name": "streaming-lambda-${pulumi.getStack()}",
+        "code": "./lambda",
+        "handler": "streaming-lambda.handler",
+        "runtime": "nodejs18.x",
+        "role": "lambdaRole",
+        "timeout": 300,
+        "environment": {
+          "variables": {
+            "DYNAMODB_TABLE_NAME": "dataTable"
+          }
+        },
+        "tags": {
+          "Name": "Streaming Lambda",
+          "Environment": "${pulumi.getStack()}"
+        }
+      },
+      "dependsOn": ["lambdaRole", "dataTable"]
+    },
+    "kinesisIngestLambda": {
+      "type": "aws:lambda:Function",
+      "config": {
+        "name": "kinesis-ingest-lambda-${pulumi.getStack()}",
+        "code": "./lambda",
+        "handler": "kinesis-ingest-lambda.handler",
+        "runtime": "nodejs18.x",
+        "role": "lambdaRole",
+        "timeout": 30,
+        "environment": {
+          "variables": {
+            "KINESIS_STREAM_NAME": "dataStream"
+          }
+        },
+        "tags": {
+          "Name": "Kinesis Ingest Lambda",
+          "Environment": "${pulumi.getStack()}"
+        }
+      },
+      "dependsOn": ["lambdaRole", "dataStream"]
+    },
+    "kinesisEventSourceMapping": {
+      "type": "aws:lambda:EventSourceMapping",
+      "config": {
+        "eventSourceArn": "dataStream",
+        "functionName": "streamingLambda",
+        "startingPosition": "LATEST",
+        "batchSize": 100,
+        "maximumBatchingWindowInSeconds": 5
+      },
+      "dependsOn": ["dataStream", "streamingLambda"]
+    },
+    "apiGateway": {
+      "type": "awsx:apigateway:API",
+      "config": {
+        "routes": [
+          {
+            "path": "/api/data",
+            "method": "GET",
+            "eventHandler": "apiLambda"
+          },
+          {
+            "path": "/api/data/{id}",
+            "method": "GET",
+            "eventHandler": "apiLambda"
+          },
+          {
+            "path": "/api/ingest/stream",
+            "method": "POST",
+            "eventHandler": "kinesisIngestLambda"
+          }
+        ]
+      },
+      "dependsOn": ["apiLambda", "kinesisIngestLambda"]
+    }
+  },
+  "diagram": {
+    "nodes": [
+      {
+        "id": "apiGateway",
+        "label": "Data Pipeline API",
+        "group": "integration"
+      },
+      {
+        "id": "apiLambda",
+        "label": "API Lambda",
+        "group": "compute"
+      },
+      {
+        "id": "kinesisIngestLambda",
+        "label": "Kinesis Ingest Lambda",
+        "group": "compute"
+      },
+      {
+        "id": "streamingLambda",
+        "label": "Streaming Lambda",
+        "group": "compute"
+      },
+      {
+        "id": "dataStream",
+        "label": "Data Stream",
+        "group": "integration"
+      },
+      {
+        "id": "deliveryStream",
+        "label": "Data Firehose",
+        "group": "integration"
+      },
+      {
+        "id": "dataTable",
+        "label": "Processed Data Table",
+        "group": "storage"
+      },
+      {
+        "id": "dataBucket",
+        "label": "Data Lake Bucket",
+        "group": "storage"
+      },
+      {
+        "id": "dataBucketVersioning",
+        "label": "Bucket Versioning",
+        "parent": "dataBucket",
+        "group": "storage"
+      },
+      {
+        "id": "lambdaRole",
+        "label": "Lambda Execution Role",
+        "group": "security"
+      },
+      {
+        "id": "lambdaPolicy",
+        "label": "Lambda Policy",
+        "parent": "lambdaRole",
+        "group": "security"
+      },
+      {
+        "id": "firehoseRole",
+        "label": "Firehose Role",
+        "group": "security"
+      },
+      {
+        "id": "firehosePolicy",
+        "label": "Firehose Policy",
+        "parent": "firehoseRole",
+        "group": "security"
+      },
+      {
+        "id": "kinesisEventSourceMapping",
+        "label": "Kinesis Event Mapping",
+        "group": "integration"
+      }
+    ],
+    "edges": [
+      {
+        "from": "apiGateway",
+        "to": "apiLambda",
+        "type": "connectsTo"
+      },
+      {
+        "from": "apiGateway",
+        "to": "kinesisIngestLambda",
+        "type": "connectsTo"
+      },
+      {
+        "from": "apiLambda",
+        "to": "dataTable",
+        "type": "connectsTo"
+      },
+      {
+        "from": "kinesisIngestLambda",
+        "to": "dataStream",
+        "type": "connectsTo"
+      },
+      {
+        "from": "dataStream",
+        "to": "streamingLambda",
+        "type": "connectsTo"
+      },
+      {
+        "from": "streamingLambda",
+        "to": "dataTable",
+        "type": "connectsTo"
+      },
+      {
+        "from": "dataStream",
+        "to": "deliveryStream",
+        "type": "connectsTo"
+      },
+      {
+        "from": "deliveryStream",
+        "to": "dataBucket",
+        "type": "connectsTo"
+      },
+      {
+        "from": "kinesisEventSourceMapping",
+        "to": "dataStream",
+        "type": "connectsTo"
+      },
+      {
+        "from": "kinesisEventSourceMapping",
+        "to": "streamingLambda",
+        "type": "connectsTo"
+      }
+    ]
+  }
+}
+```
+
+## 🎯 Conclusion
+
+```conclusion
+Your AWS data pipeline infrastructure is well-architected and production-ready. The Infra0 schema above captures the complete data flow from API ingestion through real-time processing to both operational storage (DynamoDB) and analytical storage (S3 data lake). 
+
+Key features visualized:
+- **Real-time Processing**: API Gateway → Kinesis → Lambda → DynamoDB
+- **Data Lake**: Parallel Firehose delivery to S3 with partitioning
+- **Security**: Proper IAM roles with least-privilege policies
+- **Scalability**: Pay-per-request DynamoDB and auto-scaling Kinesis
+
+To deploy: Run `pulumi up` in your project directory. The infrastructure supports immediate data ingestion via the `/api/ingest/stream` endpoint and data retrieval via the `/api/data` endpoints.
+```

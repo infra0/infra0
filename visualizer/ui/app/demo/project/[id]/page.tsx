@@ -36,49 +36,81 @@ function DemoProjectPage({ params, searchParams }: { params: Promise<{ id: strin
   const [nodeConfigs, setNodeConfigs] = useState<Record<string, Record<string, any>>>({})
   const [isGenerating, setIsGenerating] = useState(false)
   const [projectTitle, setProjectTitle] = useState("Demo Project")
-  const [input, setInput] = useState("")
+  const [input, setInput] = useState()
   const [hasSentMessage, setHasSentMessage] = useState(false)
 
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const conversation = demoData.conversations.find(conv => conv._id === projectId) || demoData.conversations[0]
-    const msg1 = conversation?.messages?.find(msg => msg._id === "msg-1")
-    
-    if (msg1) {
-      return [
-        {
-          id: msg1._id,
-          role: "user" as const,
-          content: msg1.content,
-          createdAt: new Date(msg1.createdAt)
-        },
-        {
-          id: `${msg1._id}-assistant`,
-          role: "assistant" as const,
-          content: msg1.assistant_response,
-          createdAt: new Date(msg1.createdAt)
-        }
-      ]
-    }
-    return []
-  })
 
-  useEffect(() => {
+  const getAssistantResponse = async (path: string): Promise<string> => {
     try {
+      const response = await fetch(path)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.statusText}`)
+      }
+      return await response.text()
+    } catch (error) {
+      console.error('Error fetching assistant response:', error)
+      return 'Error loading response'
+    }
+  }
+
+  const [messages, setMessages] = useState<Message[]>([])
+  
+  // Load initial messages
+  useEffect(() => {
+    const loadInitialMessages = async () => {
       const conversation = demoData.conversations.find(conv => conv._id === projectId) || demoData.conversations[0]
       const msg1 = conversation?.messages?.find(msg => msg._id === "msg-1")
-      const responseContent = msg1?.assistant_response || ""
-      const infra0Match = responseContent.match(/```infra0_schema\n([\s\S]*?)\n```/)
+      console.log({msg1})
       
-      if (infra0Match) {
-        const infra0Data = JSON.parse(infra0Match[1])
-        setNodes(infra0Data.diagram.nodes)
-        setEdges(infra0Data.diagram.edges)
-        setResources(infra0Data.resources || {})
-        setFlowDiagram(infra0Data)
+      if (msg1) {
+        let userMessage = msg1.content;
+        if(userMessage.includes('demo_assistant')) {
+          userMessage = await getAssistantResponse(userMessage)
+        }
+        const assistantContent = await getAssistantResponse(msg1.assistant_response_path)
+        setMessages([
+          {
+            id: msg1._id,
+            role: "user" as const,
+            content: userMessage,
+            createdAt: new Date(msg1.createdAt)
+          },
+          {
+            id: `${msg1._id}-assistant`,
+            role: "assistant" as const,
+            content: assistantContent,
+            createdAt: new Date(msg1.createdAt)
+          }
+        ])
       }
-    } catch (error) {
-      console.error("Error parsing demo infra0 data:", error)
     }
+    
+    loadInitialMessages()
+  }, [projectId])
+
+  useEffect(() => {
+    const loadInitialDiagram = async () => {
+      try {
+        const conversation = demoData.conversations.find(conv => conv._id === projectId) || demoData.conversations[0]
+        const msg1 = conversation?.messages?.find(msg => msg._id === "msg-1")
+        if (msg1?.assistant_response_path) {
+          const responseContent = await getAssistantResponse(msg1.assistant_response_path)
+          const infra0Match = responseContent.match(/```infra0_schema\n([\s\S]*?)\n```/)
+          
+          if (infra0Match) {
+            const infra0Data = JSON.parse(infra0Match[1])
+            setNodes(infra0Data.diagram.nodes)
+            setEdges(infra0Data.diagram.edges)
+            setResources(infra0Data.resources || {})
+            setFlowDiagram(infra0Data)
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing demo infra0 data:", error)
+      }
+    }
+    
+    loadInitialDiagram()
   }, [projectId])
 
   useEffect(() => {
@@ -89,7 +121,7 @@ function DemoProjectPage({ params, searchParams }: { params: Promise<{ id: strin
   const isWorking = isGenerating
 
   const handleSendMessage = useCallback(
-    (content: string) => {
+    async (content: string) => {
       if (isGenerating || hasSentMessage) return
       
       setHasSentMessage(true)
@@ -109,7 +141,13 @@ function DemoProjectPage({ params, searchParams }: { params: Promise<{ id: strin
       
       const conversation = demoData.conversations.find(conv => conv._id === projectId) || demoData.conversations[0]
       const followUpMessage = conversation?.messages?.find(msg => msg._id === "follow-up-message-2")
-      const followUpResponse = followUpMessage?.assistant_response || ""
+      
+      if (!followUpMessage?.assistant_response_path) {
+        setIsGenerating(false)
+        return
+      }
+      
+      const followUpResponse = await getAssistantResponse(followUpMessage.assistant_response_path)
       
       const cancelStream = streamDemoResponse(
         followUpResponse,
@@ -154,7 +192,7 @@ function DemoProjectPage({ params, searchParams }: { params: Promise<{ id: strin
         8000
       )
     },
-    [isGenerating, hasSentMessage],
+    [isGenerating, hasSentMessage, projectId],
   )
 
   const updateDiagram = (message_id: string) => {
