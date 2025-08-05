@@ -1,8 +1,62 @@
 // middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { isTokenValid } from './utils/function';
-import { getNewAuthTokens, validateAccessToken } from './services/auth/auth.service';
-import { TOKEN } from './constants/cookie';
+
+const TOKEN = 'token';
+
+
+function isTokenValid(tokenExpiry: string | number): boolean {
+  if (typeof tokenExpiry === "number") {
+    return tokenExpiry > Date.now();
+  }
+  return new Date(tokenExpiry).getTime() > Date.now();
+}
+
+function createBearerToken(token: string): string {
+  if (token) {
+    return `Bearer ${token}`;
+  }
+  return "";
+}
+
+async function getNewAuthTokens(refreshToken: string) {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      refreshToken,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to refresh token');
+  }
+
+  const data = await response.json();
+  return data.tokens;
+}
+
+async function validateAccessToken(token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/validate`, {
+      method: 'GET',
+      headers: {
+        'Authorization': createBearerToken(token),
+      },
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
+}
 
 export async function middleware(req: NextRequest) {
   const tokenCookie = req.cookies.get(TOKEN)?.value;
@@ -49,4 +103,4 @@ export async function middleware(req: NextRequest) {
 // Supports both a single string value or an array of matchers
 export const config = {
     matcher: ['/', '/project/:path*'],
-  }
+}
