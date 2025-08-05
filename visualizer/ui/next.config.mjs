@@ -9,9 +9,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  distDir: 'build',
-
-  // Add Webpack and watch logging
   webpack(config, { dev }) {
     if (dev) {
       console.log('[DEBUG] Webpack config is running in development mode');
@@ -26,16 +23,17 @@ const nextConfig = {
     }
     return config;
   },
+  ...(process.env.NODE_ENV === 'development' && {
+    webpackDevMiddleware: (config) => {
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: ['**/.next/**', '**/node_modules/**', '**/build/**', '**/public/**'],
+      };
 
-  webpackDevMiddleware: (config) => {
-    config.watchOptions = {
-      ...config.watchOptions,
-      ignored: ['**/.next/**', '**/node_modules/**', '**/build/**', '**/public/**'],
-    };
-
-    console.log('[DEBUG] webpackDevMiddleware watchOptions:', config.watchOptions);
-    return config;
-  }
+      console.log('[DEBUG] webpackDevMiddleware watchOptions:', config.watchOptions);
+      return config;
+    }
+  })
 };
 
 export default nextConfig;
