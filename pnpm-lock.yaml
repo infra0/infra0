@@ -144,6 +144,9 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.8.3
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
     devDependencies:
       nodemon:
         specifier: ^3.1.10
