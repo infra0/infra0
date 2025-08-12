@@ -7,7 +7,9 @@ import * as authMiddleware from '../middleware/auth';
 
 const router = express.Router();
 
+// New OAuth-enabled login endpoint
 router.post('/login', validate(loginValidation), authController.login);
+
 router.post('/register', validate(registerValidation), authController.register);
 router.post('/refresh', validate(refreshToken), authController.refreshToken);
 router.get('/validate', authController.validateAccessToken);

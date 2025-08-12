@@ -12,40 +12,26 @@ export interface IGetNewAuthTokensReturnValues {
     token: string;
     expires: string;
   }
+
+export enum Provider {
+  GOOGLE = 'google',
+  EMAIL = 'email',
+}
   
-  type GoogleOAuthLoginPayload = {
-    provider: 'google';
-    metaData: {
-      gAccessToken: string;
-    };
-  };
-  
-  type FacebookOAuthLoginPayload = {
-    provider: 'facebook';
-    metaData: {
-      fUserId: string;
-      fAccessToken: string;
-    };
+export type EmailLoginPayload = {
+  email: string;
+  password: string;
   };
 
-//   type EmailLoginPayload = {
-//     provider: 'email';
-//     metaData: {
-//       email: string;
-//       password: string;
-//     };
-//   };
+export type GoogleOAuthLoginPayload = {
+  gAccessToken: string;
+  };
   
-//   export type LoginPayload =
-//     | GoogleOAuthLoginPayload
-//     | FacebookOAuthLoginPayload
-//     | EmailLoginPayload;
-
 
 export type LoginPayload = {
-    contact: string;
-    password: string;
-}
+  provider: Provider;
+  metaData: EmailLoginPayload | GoogleOAuthLoginPayload;
+};
   
 export interface LoginResponse extends IBaseResponse<{
     user: User;

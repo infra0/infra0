@@ -1,10 +1,18 @@
 import { BaseResponseWithData } from "./base";
 import { IUser } from "../model/user.model";
+import { ProviderType } from "../constants/auth";
 
+
+export type OAuthMetaData = {
+  gIdToken?: string;
+  gAccessToken?: string;
+  email?: string;
+  password?: string;
+};
 
 export type LoginRequest = {
-  contact: string;
-  password: string;
+  provider: ProviderType;
+  metaData: OAuthMetaData;
 };
 
 export enum TokenTypes {
@@ -36,7 +44,7 @@ export interface LoginResponse extends BaseResponseWithData<{
 
 
 export type RegisterRequest = {
-  contact: string;
+  email: string;
   password: string;
   firstName: string;
   lastName: string;

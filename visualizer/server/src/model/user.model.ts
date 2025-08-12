@@ -5,22 +5,23 @@ import { hashPassword } from '../helpers/jwt';
 export interface IUser extends Document <ObjectId> {
   firstName: string;
   lastName: string;
-  contact: string;
   password: string;
   avatar?: string;
+  email?: string;
+  provider?: string;
+  isEmailVerified?: boolean;
 }
 
-
-// User Schema
 const UserSchema: Schema = new Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  contact: { type: String, required: true },
   password: { type: String, required: true, select: false },
   avatar: { type: String },
-}, {
-  timestamps: true // Adds createdAt and updatedAt fields
-});
+  email: { type: String, unique: true, sparse: true },
+  provider: { type: String, default: 'email' },
+  isEmailVerified: { type: Boolean, default: false },
+}, { timestamps: true }
+);
 
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
@@ -30,5 +31,4 @@ UserSchema.pre('save', async function(next) {
   next();
 });
 
-// Create and export the model
 export const UserModel = mongoose.model<IUser>('User', UserSchema);

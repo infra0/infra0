@@ -9,7 +9,7 @@ import {
   RefreshTokenResponse,
   JWT_PAYLOAD_TYPE,
 } from "../types/auth.types";
-import { getUserByContact, createUserItem } from "../services/user.service";
+import { createUserItem } from "../services/user.service";
 import { AppError } from "../errors/app-error";
 import httpStatus from "http-status";
 import { IUser } from "../model/user.model";
@@ -21,6 +21,7 @@ import {
 } from "../helpers/jwt";
 import { Status } from "../types/base";
 import { extractAuthToken } from "../helpers/jwt";
+import { authService } from "../services/auth.service";
 
 const refreshToken = asyncHandler(
   async (
@@ -53,41 +54,40 @@ const refreshToken = asyncHandler(
   }
 );
 
+// New unified login that supports OAuth
 const login = asyncHandler(
   async (req: Request<{}, {}, LoginRequest>, res: Response<LoginResponse>) => {
-    const { contact, password } = req.body;
-    const user: IUser | null = await getUserByContact(contact);
-    if (!user) {
-      throw new AppError("User not found", httpStatus.NOT_FOUND);
-    }
-    // Here the user.password is hashed and password is not hashed
-    const isPasswordCorrect = await correctPassword(password, user.password);
-    if (!isPasswordCorrect) {
-      throw new AppError("Invalid password", httpStatus.UNAUTHORIZED);
-    }
+    const { provider, metaData } = req.body;
+    
+    try {
+      const user = await authService.authenticate(provider, metaData);
 
-    // Generate both tokens
-    const tokens = await generateAuthTokens({ id: user.id });
+      // Generate both tokens
+      const tokens = await generateAuthTokens({ id: user.id });
 
-    res.status(httpStatus.OK).json({
-      status: Status.SUCCESS,
-      message: "Login successful",
-      data: {
-        user,
-        tokens
-      },
-    });
+      res.status(httpStatus.OK).json({
+        status: Status.SUCCESS,
+        message: "Login successful",
+        data: {
+          user,
+          tokens
+        },
+      });
+    } catch (error: any) {
+      throw new AppError(error.message, httpStatus.UNAUTHORIZED);
+    }
   }
 );
+
 
 const register = asyncHandler(
   async (
     req: Request<{}, {}, RegisterRequest>,
     res: Response<RegisterResponse>
   ) => {
-    const { contact, password, firstName, lastName } = req.body;
+    const { email, password, firstName, lastName } = req.body;
     const user: IUser = await createUserItem({
-      contact,
+      email,
       password,
       firstName,
       lastName,

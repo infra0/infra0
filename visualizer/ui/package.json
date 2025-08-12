@@ -39,6 +39,7 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
+    "@react-oauth/google": "^0.12.2",
     "@types/axios": "^0.14.4",
     "@types/dagre": "^0.7.53",
     "@types/jwt-decode": "^3.1.0",

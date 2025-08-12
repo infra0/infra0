@@ -2,7 +2,7 @@ import { createUserItem } from "../services/user.service";
 
 export const seedUser = async () => {
     await createUserItem({
-        contact: "+15551234567",
+        email: "demo@gmail.com",
         password: "demo1234",
         firstName: "Demo",
         lastName: "User",

@@ -1,4 +1,4 @@
 export const DEMO_USER_LOGIN = {
-    contact : '+15551234567',
+    email : 'demo@gmail.com',
     password : 'demo1234'
 }

@@ -25,7 +25,7 @@ export const seedUser = async () => {
 
 export const getUserWithToken = async () => {
     const response = await axios.post(getLoginUrl(), {
-        contact: demoUser.contact,
+        email: demoUser.email,
         password: demoUser.password,
     });
     return response.data;

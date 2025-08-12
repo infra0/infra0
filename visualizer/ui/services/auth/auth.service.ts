@@ -38,7 +38,6 @@ export const getLoggedInUser = async () => {
 };
 
 export const login = async (payload: LoginPayload) => {
-    console.log({payload})
   const { data } = await axios.post<LoginResponse>('/v1/auth/login', payload);
   return data;
 };
