@@ -8,6 +8,8 @@ import {
   RefreshTokenRequest,
   RefreshTokenResponse,
   JWT_PAYLOAD_TYPE,
+  SessionResponse,
+  SessionStatusRequest,
 } from "../types/auth.types";
 import { createUserItem } from "../services/user.service";
 import { AppError } from "../errors/app-error";
@@ -22,6 +24,10 @@ import {
 import { Status } from "../types/base";
 import { extractAuthToken } from "../helpers/jwt";
 import { authService } from "../services/auth.service";
+import * as sessionService from "../services/session.service";
+import { generateShortSessionId } from "../helpers/auth";
+import { SessionStatus } from "../model/session.model";
+
 
 const refreshToken = asyncHandler(
   async (
@@ -58,12 +64,13 @@ const refreshToken = asyncHandler(
 const login = asyncHandler(
   async (req: Request<{}, {}, LoginRequest>, res: Response<LoginResponse>) => {
     const { provider, metaData } = req.body;
-    
+    const sessionId = metaData?.sessionId;
     try {
       const user = await authService.authenticate(provider, metaData);
-
+      
       // Generate both tokens
       const tokens = await generateAuthTokens({ id: user.id });
+      if(sessionId) await sessionService.updateSession(sessionId, tokens);
 
       res.status(httpStatus.OK).json({
         status: Status.SUCCESS,
@@ -128,4 +135,31 @@ const validateAccessToken = asyncHandler(async (req: Request, res: Response<bool
 
 });
 
-export { login, register, me, refreshToken, validateAccessToken };
+
+const createSession = asyncHandler(async (req: Request, res: Response<SessionResponse>) => {
+  const sessionId = generateShortSessionId();
+  const session = await sessionService.createSession(sessionId);
+  res.status(httpStatus.OK).json({
+    data: session,
+    status: Status.SUCCESS,
+    message: "Session created successfully"
+  });
+});
+
+const getSessionStatus = asyncHandler(async (req: Request<{}, {}, SessionStatusRequest>, res: Response<SessionResponse>) => {
+  const { sessionId } = req.body;
+  const session = await sessionService.getSession(sessionId);
+
+  if(session.status === SessionStatus.READY || session.tokens) {
+    await sessionService.deleteSession(sessionId);
+  }
+  
+  res.status(httpStatus.OK).json({
+    data: session,
+    status: Status.SUCCESS,
+    message: "Session status fetched successfully"
+  });
+});
+
+
+export { login, register, me, refreshToken, validateAccessToken, createSession, getSessionStatus };

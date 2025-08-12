@@ -5,6 +5,7 @@ const loginMetaData = Joi.object().keys({
   email: Joi.string().email(),
   password: Joi.string(),
   gAccessToken: Joi.string(),
+  sessionId: Joi.string(),
 });
 
 export const loginValidation = Joi.object({
@@ -28,5 +29,11 @@ export const registerValidation = Joi.object({
 export const refreshToken = Joi.object({
     body: Joi.object().keys({
         refreshToken: Joi.string().required()
+    })
+})
+
+export const sessionStatusValidation = Joi.object({
+    body: Joi.object().keys({
+        sessionId: Joi.string().required()
     })
 })
