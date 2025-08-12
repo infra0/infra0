@@ -3,14 +3,6 @@ import dotenv from "dotenv";
 // Load base .env file from visualizer directory (one level up from server)
 dotenv.config({ path: `${__dirname}/../.env` });
 
-const envpath =
-  process.env.NODE_ENV === "development"
-    ? `${__dirname}/../.env.development`
-    : `${__dirname}/../.env.production`;
-
-// Load environment-specific .env file
-dotenv.config({ path: envpath });
-
 export const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   mongoDbUri:
