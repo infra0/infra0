@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-ENV NODE_ENV=developemnt
+ENV NODE_ENV=development
 
 RUN npm install -g pnpm
 
@@ -11,6 +11,8 @@ COPY ./server /app
 RUN pnpm install
 
 RUN pnpm run build
+
+RUN mkdir -p /app/dist && cp -r /app/config /app/dist/
 
 EXPOSE 4000
 

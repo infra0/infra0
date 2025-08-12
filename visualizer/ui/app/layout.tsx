@@ -14,7 +14,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Infra Cursor - Infrastructure as Code Generator",
   description: "Generate Pulumi infrastructure code with AI",
-    generator: 'v0.dev'
+    generator: 'infra0.dev'
 }
 
 export default function RootLayout({

@@ -7,28 +7,34 @@ x-shared-env: &shared-env
 services:
   infra0-visualizer-ui:
     <<: *shared-env
-    image: xshubhamx/infra0-visualizer-ui:${NODE_ENV:-development}
+    build:
+      context: .
+      dockerfile: ui.dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV:-development}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
     ports:
       - 3000:3000
-    container_name: infra0-visualizer-ui
+    container_name: infra0-visualizer-ui-dev
     stop_signal: SIGINT
-
   mongo:
     <<: *shared-env
     image: mongo:latest
-    container_name: infra0-mongo
+    container_name: infra0-mongo-dev
     ports:
       - 27017:27017
     volumes:
-      - infra0-mongo-data:/data/db
+      - infra0-mongo-dev-data:/data/db
     restart: unless-stopped
 
   infra0-visualizer-server:
     <<: *shared-env
-    image: xshubhamx/infra0-visualizer-server:${NODE_ENV:-development}
+    build:
+      context: .
+      dockerfile: server.dockerfile
     ports:
       - 4000:4000
-    container_name: infra0-visualizer-server
+    container_name: infra0-visualizer-server-dev
     stop_signal: SIGINT
     depends_on:
       - mongo
@@ -42,4 +48,4 @@ services:
       - PORT=4000
 
 volumes:
-  infra0-mongo-data:
+  infra0-mongo-dev-data: 
