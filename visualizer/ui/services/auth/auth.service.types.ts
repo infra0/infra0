@@ -21,10 +21,12 @@ export enum Provider {
 export type EmailLoginPayload = {
   email: string;
   password: string;
+  sessionId?: string;
   };
 
 export type GoogleOAuthLoginPayload = {
   gAccessToken: string;
+  sessionId?: string;
   };
   
 

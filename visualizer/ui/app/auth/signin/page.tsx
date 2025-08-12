@@ -22,13 +22,14 @@ function SignInContent() {
   const userContext = useContext(UserContext)
   // Get return URL from query params, default to home
   const returnUrl = searchParams.get('returnUrl') || '/'
+  const sessionId = searchParams.get('sessionId') || undefined
 
   const handleSignIn = async (provider: Provider, metaData: GoogleOAuthLoginPayload | EmailLoginPayload) => {
     setIsLoading(provider)
     try {
       const { data } = await authService.login({
         provider: provider,
-        metaData: metaData,
+        metaData: { ...metaData, sessionId: sessionId },
       })
 
       setCookie(TOKEN, JSON.stringify(data.tokens))
