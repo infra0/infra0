@@ -34,7 +34,7 @@ async function getNewAuthTokens(refreshToken: string) {
   }
 
   const data = await response.json();
-  return data.tokens;
+  return data.data.tokens;
 }
 
 async function validateAccessToken(token: string): Promise<boolean> {
@@ -67,7 +67,6 @@ export async function middleware(req: NextRequest) {
 
   try {
     const parsedToken = JSON.parse(tokenCookie);
-    console.log({parsedToken})
     let { token: accessToken, expires: accessExpire } = parsedToken.access;
     const { token: refreshToken, expires: refreshExpire } = parsedToken.refresh;
 
