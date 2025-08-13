@@ -1,17 +1,35 @@
 {
     "name": "infra0-cli",
     "version": "0.1.0",
-    "private": true,
+    "description": "CLI tool for infrastructure management and visualization",
+    "main": "dist/src/main.js",
+    "author": "infra0 team",
+    "license": "MIT",
+    "keywords": ["cli", "infrastructure", "devops", "automation", "ai", "pulumi", "iac"],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/infra0/infra0.git",
+        "directory": "cli"
+    },
+    "homepage": "https://github.com/infra0/infra0#readme",
+    "bugs": {
+        "url": "https://github.com/infra0/infra0/issues"
+    },
+    "files": [
+        "dist/**/*",
+        "README.md"
+    ],
     "scripts": {
         "start": "node dist/main.js",
         "build": "tsc && pnpm -s copy:assets",
         "dev": "ts-node src/main.ts",
         "postbuild": "chmod +x dist/src/main.js || true",
         "copy:assets": "cpy \"src/**/*.{yml,yaml}\" dist/src --parents",
-        "build:watch": "tsc --watch"
+        "build:watch": "tsc --watch",
+        "prepublishOnly": "npm run build"
     },
     "bin": {
-        "infra0": "./dist/src/main.js"
+        "infra0-cli": "./dist/src/main.js"
     },
     "dependencies": {
         "axios": "^1.7.9",
@@ -25,5 +43,8 @@
         "@types/express": "^5.0.0",
         "cpy-cli": "^5.0.0",
         "ts-node": "^10.9.2"
+    },
+    "engines": {
+        "node": ">=16.0.0"
     }
 }
