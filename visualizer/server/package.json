@@ -5,8 +5,8 @@
     "scripts": {
         "build": "tsc",
         "start": "node dist/src/main.js",
-        "dev": "cross-env NODE_ENV=development nodemon --exec ts-node src/main.ts --watch src",
-        "db:seed": "ts-node src/scripts/seed-data.ts"
+        "dev": "cross-env NODE_ENV=development nodemon --exec npx ts-node src/main.ts --watch src",
+        "db:seed": "npx ts-node src/scripts/seed-data.ts"
     },
     "dependencies": {
         "@ai-sdk/anthropic": "^1.2.12",
