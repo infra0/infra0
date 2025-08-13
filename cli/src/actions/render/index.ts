@@ -15,19 +15,86 @@ import {
   readFile,
   writeFile,
 } from '../shared/helpers/fileHelper';
-import { Infra0ProjectJSON } from '../shared/types';
+import { Infra0ProjectConfig, Infra0ProjectJSON, Infra0ProjectTokensData } from '../../types';
 import {
-  displayPromptForConversationSelection,
-  intiateNewConversation,
-  validateVisualizerData,
+  displayPromptForRunningVisualizerLocally,
+  getOrRefreshTokensFromConfig,
+  startConversationSelectionFlow,
 } from './conversationHelper';
-import { NEW_CONVERSATION_ID, NEW_CONVERSATION_LABEL } from './constants';
-import {
-  seedUser,
-  getUserWithToken,
-  getConversations,
-  getVisualizerConversationUrl,
-} from '../../services/visualizer';
+import { CLOUD_VISUALIZER_API_BASE_URL, CLOUD_VISUALIZER_URL, LOCAL_VISUALIZER_API_BASE_URL, LOCAL_VISUALIZER_URL } from './constants';
+import { DockerComposeOptions } from './types';
+import { SessionAuth, DemoUserAuth } from '../../services/visualizer/auth';
+import { Conversation } from '../../services/visualizer/conversation';
+import { updateTokensInProjectJSON } from '../shared/helpers/directoryHelper';
+
+const getVisualizerConversationUrl = (visualizerUrl: string, conversationId: string) => {
+  return `${visualizerUrl}/project/${conversationId}?need_streaming=true`;
+}
+
+const initiateLocalVisualizerFlow = async (
+  defaultProjectConfig: Infra0ProjectConfig,
+  projectJSON: Infra0ProjectJSON,
+  dockerComposeOptions: DockerComposeOptions,
+) => {
+
+  const conversationService = new Conversation(LOCAL_VISUALIZER_API_BASE_URL);
+  const demoUserAuthService = new DemoUserAuth(LOCAL_VISUALIZER_API_BASE_URL);
+
+  await dockerComposePull(dockerComposeOptions);
+  await dockerComposeUp(dockerComposeOptions, true);
+  console.log("Infra0 Visualizer is running!");
+
+  let tokens: Infra0ProjectTokensData;
+  try {
+    tokens = await getOrRefreshTokensFromConfig(projectJSON, demoUserAuthService as DemoUserAuth);
+  } catch (error) {
+    try {
+      tokens = await demoUserAuthService.getTokens();
+    } catch (fetchError) {
+      console.error("❌ Failed to fetch new tokens:", fetchError);
+      process.exit(1);
+    }
+  }
+
+  await updateTokensInProjectJSON(defaultProjectConfig, tokens);
+
+  const conversations = (await conversationService.getConversations(tokens.access.token)).data.conversations.map((conversation: any) => conversation._id);
+
+  const conversationToRender = await startConversationSelectionFlow(projectJSON, conversationService, tokens, conversations);
+
+  const visualizerUrl = getVisualizerConversationUrl(LOCAL_VISUALIZER_URL, conversationToRender);
+  console.log(`Visualizer running at: ${visualizerUrl}`);
+};
+
+const initiateCloudVisualizerFlow = async (
+  defaultProjectConfig: Infra0ProjectConfig,
+  projectJSON: Infra0ProjectJSON,
+) => {
+
+  const conversationService = new Conversation(CLOUD_VISUALIZER_API_BASE_URL);
+  const sessionAuthService = new SessionAuth(CLOUD_VISUALIZER_API_BASE_URL);
+
+  let tokens: Infra0ProjectTokensData;
+  try {
+    tokens = await getOrRefreshTokensFromConfig(projectJSON, sessionAuthService);
+  } catch (error) {
+    try {
+      tokens = await sessionAuthService.getTokens();
+    } catch (fetchError) {
+      console.error("❌ Failed to fetch new tokens:", fetchError);
+      process.exit(1);
+    }
+  }
+
+  await updateTokensInProjectJSON(defaultProjectConfig, tokens);
+
+  const conversations = (await conversationService.getConversations(tokens.access.token)).data.conversations.map((conversation: any) => conversation._id);
+
+  const conversationToRender = await startConversationSelectionFlow(projectJSON, conversationService, tokens, conversations);
+
+  const visualizerUrl = getVisualizerConversationUrl(CLOUD_VISUALIZER_URL, conversationToRender);
+  console.log(`Visualizer running at: ${visualizerUrl}`);
+}
 
 export const addRenderAction = (program: Command) => {
   program.action(async () => {
@@ -36,7 +103,7 @@ export const addRenderAction = (program: Command) => {
       const config = getDefaultProjectConfig();
       validateProjectInitialized(config);
 
-      console.log('Starting Infra0 Visualizer...');
+      const runningVisualizerLocally = await displayPromptForRunningVisualizerLocally();
 
       const workingDirectory = process.cwd();
       const baseComposePath = getBaseComposePath();
@@ -48,83 +115,13 @@ export const addRenderAction = (program: Command) => {
         workingDirectory,
       };
 
-      // --- Docker Compose (commented out for now) ---
-      // await dockerComposePull(dockerComposeOptions);
-      // await dockerComposeUp(dockerComposeOptions, true);
-      console.log("Infra0 Visualizer is running!");
-      console.log("UI: http://localhost:3000");
-      console.log("Server: http://localhost:4000");
+      const projectJSON = JSON.parse(readFile(path.join(config.metadataDirectoryName, config.projectJSONFileName)));
 
-      // Step 2: Seed demo user and store token
-      try {
-        await seedUser();
-        const userData = await getUserWithToken();
-
-        console.log(userData);
-
-        const projectJsonPath = path.join(
-          config.metadataDirectoryName,
-          config.projectJSONFileName
-        );
-        const projectJSON: Infra0ProjectJSON = JSON.parse(readFile(projectJsonPath));
-        projectJSON.visualizerData = {
-          userId: userData.data.user._id,
-          tokens: userData.data.tokens,
-        };
-        writeFile(projectJsonPath, JSON.stringify(projectJSON, null, 2));
-      } catch (error) {
-        console.error('❌ Failed to initialize visualizer data:', error);
-        process.exit(1);
+      if(runningVisualizerLocally) {
+        await initiateLocalVisualizerFlow(config, projectJSON, dockerComposeOptions);
+      } else {
+        await initiateCloudVisualizerFlow(config, projectJSON);
       }
-
-    //   Step 3: Load conversations and token
-      let conversations: string[] = [];
-      let token = '';
-      const projectJsonPath = path.join(
-        config.metadataDirectoryName,
-        config.projectJSONFileName
-      );
-      const projectJSON: Infra0ProjectJSON = JSON.parse(readFile(projectJsonPath));
-
-      console.log(projectJSON);
-
-      validateVisualizerData(projectJSON);
-
-      try {
-        token = projectJSON.visualizerData.tokens.access.token;
-        conversations = await getConversations(token);
-      } catch (error) {
-        console.error('❌ Failed to get conversations:', error);
-        process.exit(1);
-      }
-
-      // Step 4: Prompt for conversation selection
-      const conversationSelections = [
-        {
-          id: NEW_CONVERSATION_ID,
-          label: NEW_CONVERSATION_LABEL,
-        },
-        ...conversations.map((conversation) => ({
-          id: conversation,
-          label: conversation,
-        })),
-      ];
-
-      const selectedConversation = await displayPromptForConversationSelection(
-        conversationSelections
-      );
-
-      console.log(selectedConversation);
-
-      // Step 5: Handle new or existing conversation
-      const conversationToRender =
-        selectedConversation.id === NEW_CONVERSATION_ID
-          ? await intiateNewConversation(token, projectJSON)
-          : selectedConversation.id;
-
-      // Redirect user to the visualizer UI
-      const visualizerUrl = getVisualizerConversationUrl(conversationToRender);
-      console.log(`Visualizer running at: ${visualizerUrl}`);
     } catch (error) {
       if (error instanceof Error) {
         console.error(`❌ ${error.message}`);

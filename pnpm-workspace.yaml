@@ -1,3 +1,6 @@
 packages:
-  - "*"
-  - "visualizer/*"
+  - '*'
+  - visualizer/*
+
+overrides:
+  infra0-cli: link:../../../../Library/pnpm/global/5/node_modules/infra0-cli

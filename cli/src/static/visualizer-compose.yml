@@ -1,0 +1,47 @@
+name: infra0-visualizer
+version: "3.9"
+
+x-shared-env: &shared-env
+  environment:
+    NODE_ENV: ${NODE_ENV:-development}
+
+services:
+  infra0-visualizer-ui:
+    <<: *shared-env
+    ports:
+      - 3000:3000
+    container_name: infra0-visualizer-ui
+    image: xshubhamx/infra0-visualizer-ui:${NODE_ENV:-development}
+    platform: linux/amd64
+    stop_signal: SIGINT
+
+  mongo:
+    <<: *shared-env
+    image: mongo:latest
+    container_name: infra0-mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - infra0-mongo-data:/data/db
+
+  infra0-visualizer-server:
+    <<: *shared-env
+    ports:
+      - 4000:4000
+    container_name: infra0-visualizer-server
+    image: xshubhamx/infra0-visualizer-server:${NODE_ENV:-development}
+    platform: linux/amd64
+    stop_signal: SIGINT
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_DB_URI=mongodb://mongo:27017/visualizer
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
+      - JWT_ACCESS_EXPIRATION_MINUTES=${JWT_ACCESS_EXPIRATION_MINUTES:-15}
+      - JWT_REFRESH_EXPIRATION_DAYS=${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      - JWT_SECRET=${JWT_SECRET:-infra0-jwt-secret-1945}
+      - PORT=4000
+
+volumes:
+  infra0-mongo-data:

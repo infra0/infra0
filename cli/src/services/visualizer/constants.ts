@@ -1,0 +1,10 @@
+export const BASE_URL = process.env.VISUALIZER_API_URL || 'http://localhost:4000';
+export const SEED_DEMO_USER_PATH = '/api/v1/seed/demo-user';
+export const LOGIN_PATH = '/api/v1/auth/login';
+export const USER_DATA_PATH = '/api/v1/auth/me';
+export const VALIDATE_TOKEN_PATH = '/api/v1/auth/validate';
+export const REFRESH_TOKEN_PATH = '/api/v1/auth/refresh';
+export const SESSION_CREATION_PATH = '/api/v1/auth/session';
+export const SESSION_STATUS_PATH = '/api/v1/auth/session/status';
+export const CREATE_CONVERSATION_PATH = '/api/v1/chat/create';
+export const GET_CONVERSATIONS_PATH = '/api/v1/chat';

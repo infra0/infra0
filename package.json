@@ -1,18 +1,21 @@
 {
-    "name": "infra0",
-    "private": true,
-    "version": "1.0.0",
-    "scripts": {
-      "dev": "pnpm -r run dev",
-      "dev:visualizer": "pnpm --parallel --filter infra0-visualizer-ui --filter infra0-visualizer-server run dev",
-      "db:seed": "pnpm --filter infra0-visualizer-server run db:seed",
-      "build": "pnpm -r run build",
-      "postinstall": "chmod +x ./visualizer/scripts/docker-build.sh && chmod +x ./visualizer/scripts/docker-run.sh",
-      "visualizer:start": "pnpm run --filter infra0-visualizer start",
-      "visualizer:build": "pnpm run --filter infra0-visualizer build"
-    },
-    "devDependencies": {
-      "typescript": "^5.4.0",
-      "eslint": "^8.52.0"
-    }
+  "name": "infra0",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "pnpm -r run dev",
+    "dev:visualizer": "pnpm --parallel --filter infra0-visualizer-ui --filter infra0-visualizer-server run dev",
+    "db:seed": "pnpm --filter infra0-visualizer-server run db:seed",
+    "build": "pnpm -r run build",
+    "postinstall": "chmod +x ./visualizer/scripts/docker-build.sh && chmod +x ./visualizer/scripts/docker-run.sh",
+    "visualizer:start": "pnpm run --filter infra0-visualizer start",
+    "visualizer:build": "pnpm run --filter infra0-visualizer build"
+  },
+  "devDependencies": {
+    "eslint": "^8.52.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "infra0-cli": "link:../../../../Library/pnpm/global/5/node_modules/infra0-cli"
   }
+}

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Infra0ProjectConfig } from '../types';
+import { Infra0ProjectConfig } from '../../../types';
 import { INFRA0_DIRECTORY_NAME, OVERRIDE_FILE_NAME, PROJECT_JSON_FILE_NAME } from '../../constants';
 
 /**

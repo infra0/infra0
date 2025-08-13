@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import commander from 'commander';
 import { name, version } from '../package.json';
 import {init, render} from "./commands"
