@@ -4,16 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  infra0-cli: link:../../../../Library/pnpm/global/5/node_modules/infra0-cli
-
 importers:
 
   .:
-    dependencies:
-      infra0-cli:
-        specifier: link:../../../../Library/pnpm/global/5/node_modules/infra0-cli
-        version: link:../../../../Library/pnpm/global/5/node_modules/infra0-cli
     devDependencies:
       eslint:
         specifier: ^8.52.0
