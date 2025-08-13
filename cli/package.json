@@ -4,8 +4,14 @@
     "private": true,
     "scripts": {
         "start": "node dist/main.js",
-        "build": "tsc",
-        "dev": "ts-node src/main.ts"
+        "build": "tsc && pnpm -s copy:assets",
+        "dev": "ts-node src/main.ts",
+        "postbuild": "chmod +x dist/src/main.js || true",
+        "copy:assets": "cpy \"src/**/*.{yml,yaml}\" dist/src --parents",
+        "build:watch": "tsc --watch"
+    },
+    "bin": {
+        "infra0": "./dist/src/main.js"
     },
     "dependencies": {
         "axios": "^1.7.9",
@@ -17,6 +23,7 @@
     },
     "devDependencies": {
         "@types/express": "^5.0.0",
+        "cpy-cli": "^5.0.0",
         "ts-node": "^10.9.2"
     }
 }

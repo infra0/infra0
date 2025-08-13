@@ -1,20 +1,18 @@
 import fs from 'fs';
+import path from 'path';
+import { Infra0ProjectConfig, Infra0ProjectJSON, Infra0ProjectTokensData } from '../../../types';
+import { readFile, writeFile } from './fileHelper';
 
 /**
- * Checks if the .infra0 directory exists and creates it if it doesn't
- * @param directoryName - The name of the directory to check/create
+ * Create a directory
+ * @param directoryName - The name of the directory to create
  * @returns boolean - true if directory already existed, false if it was created
  */
-export function checkAndCreateInfra0Directory(directoryName: string): boolean {
-    if (fs.existsSync(directoryName)) {
-        console.log(`${directoryName} directory already exists`);
-        return true;
-    }
-
+export function createDirectory(directoryName: string): boolean {
     try {
         fs.mkdirSync(directoryName, { recursive: true });
         console.log(`Created ${directoryName} directory`);
-        return false;
+        return true;
     } catch (error) {
         throw new Error(`Failed to create ${directoryName} directory: ${error}`);
     }
@@ -39,3 +37,35 @@ export function getFilesInDirectory(directory: string): string[] {
     }
     return results;
 }
+
+/**
+ * Forcefully delete a directory
+ * @param directory - The directory to delete
+ */
+export function forceDeleteDirectory(directory: string): void {
+    if (fs.existsSync(directory)) {
+        fs.rmdirSync(directory, { recursive: true });
+    }
+}
+
+/**
+ * Check if a directory exists
+ * @param directory - The directory to check
+ * @returns boolean - true if directory exists, false otherwise
+ */
+export function directoryExists(directory: string): boolean {
+    return fs.existsSync(directory);
+}
+
+export const updateTokensInProjectJSON = async (defaultProjectConfig: Infra0ProjectConfig, tokens: Infra0ProjectTokensData) => {
+    const projectJsonPath = path.join(
+      defaultProjectConfig.metadataDirectoryName,
+      defaultProjectConfig.projectJSONFileName
+    );
+    const projectJSON: Infra0ProjectJSON = JSON.parse(readFile(projectJsonPath));
+    projectJSON.visualizerData = {
+      tokens,
+    };
+    console.log(projectJSON);
+    writeFile(projectJsonPath, JSON.stringify(projectJSON, null, 2));
+  }

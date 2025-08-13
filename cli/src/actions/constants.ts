@@ -2,11 +2,12 @@ export const INFRA0_DIRECTORY_NAME = '.infra0';
 export const OVERRIDE_FILE_NAME = 'visualizer-compose.override.yml';
 export const PROJECT_JSON_FILE_NAME = 'project.json';
 export const BASE_COMPOSE_FILE_NAME = 'visualizer-compose.yml';
-export const BASE_COMPOSE_FILE_PATH = `../../../resources/${BASE_COMPOSE_FILE_NAME}`;
+export const BASE_COMPOSE_FILE_PATH = `../../static/${BASE_COMPOSE_FILE_NAME}`;
 
 export const INFRA0_OVERRIDE_FILE_CONTENT = `# Visualizer Docker Compose Override Configuration
 # This file contains environment-specific overrides for the visualizer services
 
+name: infra0-visualizer
 version: "3.9"
 
 x-shared-env: &shared-env
@@ -20,7 +21,18 @@ services:
       - 3000:3000
     container_name: infra0-visualizer-ui
     image: xshubhamx/infra0-visualizer-ui:\${NODE_ENV:-development}
+    platform: linux/amd64
     stop_signal: SIGINT
+
+  mongo:
+    <<: *shared-env
+    image: mongo:latest
+    container_name: infra0-mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - infra0-mongo-data:/data/db
+    restart: unless-stopped
 
   infra0-visualizer-server:
     <<: *shared-env
@@ -28,7 +40,21 @@ services:
       - 4000:4000
     container_name: infra0-visualizer-server
     image: xshubhamx/infra0-visualizer-server:\${NODE_ENV:-development}
+    platform: linux/amd64
     stop_signal: SIGINT
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_DB_URI=mongodb://mongo:27017/visualizer
+      - ANTHROPIC_API_KEY=\${ANTHROPIC_API_KEY}
+      - GOOGLE_GENERATIVE_AI_API_KEY=\${GOOGLE_GENERATIVE_AI_API_KEY}
+      - JWT_ACCESS_EXPIRATION_MINUTES=\${JWT_ACCESS_EXPIRATION_MINUTES:-15}
+      - JWT_REFRESH_EXPIRATION_DAYS=\${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      - JWT_SECRET=\${JWT_SECRET:-infra0-jwt-secret-1945}
+      - PORT=4000
+
+volumes:
+  infra0-mongo-data:
 `;
 
 export const INFRA0_PROJECT_JSON_FILE_CONTENT = {
