@@ -103,7 +103,8 @@ export const addRenderAction = (program: Command) => {
       const config = getDefaultProjectConfig();
       validateProjectInitialized(config);
 
-      const runningVisualizerLocally = await displayPromptForRunningVisualizerLocally();
+      // TODO: fix dev flow than remove this
+      const runningVisualizerLocally = false
 
       const workingDirectory = process.cwd();
       const baseComposePath = getBaseComposePath();
