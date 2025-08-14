@@ -1,6 +1,6 @@
 {
     "name": "infra0-cli",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "CLI tool for infrastructure management and visualization",
     "main": "dist/src/main.js",
     "author": "infra0 team",
