@@ -2,6 +2,7 @@
   "name": "infra0",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "pnpm -r run dev",
     "dev:visualizer": "pnpm --parallel --filter infra0-visualizer-ui --filter infra0-visualizer-server run dev",
@@ -9,10 +10,15 @@
     "build": "pnpm -r run build",
     "postinstall": "chmod +x ./visualizer/scripts/docker-build.sh && chmod +x ./visualizer/scripts/docker-run.sh",
     "visualizer:start": "pnpm run --filter infra0-visualizer start",
-    "visualizer:build": "pnpm run --filter infra0-visualizer build"
+    "visualizer:build": "pnpm run --filter infra0-visualizer build",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui"
   },
   "devDependencies": {
     "eslint": "^8.52.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vite": "^7.1.2",
+    "vitest": "^3.2.4"
   }
 }
